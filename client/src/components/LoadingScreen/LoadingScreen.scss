@@ -1,0 +1,313 @@
+@import '../../styles/variables';
+@import '../../styles/mixins';
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  overflow: hidden;
+  @include flex-center;
+  background: linear-gradient(135deg, $color-black 0%, $color-grey-darker 50%, $primary-red-darker 100%);
+}
+
+.loading-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  
+  .gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.2;
+    animation: float 8s ease-in-out infinite;
+    
+    &.orb-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, $primary-red 0%, transparent 70%);
+      top: -150px;
+      left: -150px;
+      animation-delay: 0s;
+    }
+    
+    &.orb-2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, $primary-red-light 0%, transparent 70%);
+      bottom: -200px;
+      right: -200px;
+      animation-delay: 3s;
+    }
+  }
+  
+  .grid-pattern {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.3;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.loading-content {
+  position: relative;
+  z-index: 10;
+  @include flex-column;
+  align-items: center;
+  gap: $spacing-5;
+  padding: $spacing-6;
+  max-width: 500px;
+  width: 100%;
+}
+
+.logo-container {
+  position: relative;
+  margin-bottom: $spacing-3;
+  width: 150px;
+  height: 150px;
+  @include flex-center;
+  
+  @include respond-to(md) {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+.logo-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: $primary-red;
+  border-right-color: $primary-red-light;
+  border-radius: 50%;
+  box-shadow: $shadow-red;
+}
+
+.ssg-logo {
+  width: 75%;
+  height: 75%;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba($primary-red, 0.4);
+  background: $color-white;
+  padding: 8px;
+}
+
+.loading-title {
+  font-size: $text-2xl;
+  font-weight: 900;
+  color: $color-white;
+  text-align: center;
+  margin: 0;
+  letter-spacing: 2px;
+  text-shadow: 0 0 18px rgba($primary-red, 0.5);
+  
+  @include respond-to(md) {
+    font-size: 2rem;
+  }
+}
+
+.loading-subtitle {
+  font-size: $text-lg;
+  color: $color-grey-light;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+  
+  @include respond-to(md) {
+    font-size: $text-xl;
+  }
+}
+
+.loading-campus {
+  font-size: $text-base;
+  color: $color-grey;
+  text-align: center;
+  margin: 0;
+  font-weight: 500;
+  
+  @include respond-to(md) {
+    font-size: $text-lg;
+  }
+}
+
+.progress-container {
+  width: 100%;
+  max-width: 350px;
+  @include flex-column;
+  gap: $spacing-3;
+}
+
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: rgba($color-white, 0.1);
+  border-radius: $radius-full;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba($color-black, 0.3);
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, $primary-red-dark 0%, $primary-red 50%, $primary-red-light 100%);
+  border-radius: $radius-full;
+  box-shadow: $shadow-red;
+  transition: width 0.5s ease-out;
+}
+
+.progress-info {
+  @include flex-between;
+  width: 100%;
+  
+  .progress-text {
+    font-size: $text-sm;
+    color: $color-grey-light;
+    font-weight: 500;
+  }
+  
+  .progress-percentage {
+    font-size: $text-sm;
+    color: $primary-red-light;
+    font-weight: 700;
+  }
+}
+
+.connection-indicator {
+  @include flex-center;
+  gap: $spacing-2;
+  padding: $spacing-2 $spacing-3;
+  background: rgba($color-white, 0.05);
+  border-radius: $radius-full;
+  border: 1px solid rgba($color-white, 0.1);
+  
+  .connection-dots {
+    display: flex;
+    gap: $spacing-1;
+    
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: $color-grey;
+      
+      &:nth-child(1) {
+        animation: pulse-dot 1.4s infinite;
+      }
+      
+      &:nth-child(2) {
+        animation: pulse-dot 1.4s infinite 0.2s;
+      }
+      
+      &:nth-child(3) {
+        animation: pulse-dot 1.4s infinite 0.4s;
+      }
+    }
+  }
+  
+  .connection-text {
+    font-size: $text-xs;
+    color: $color-grey-light;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  &.fast .dot {
+    background: $accent-green;
+  }
+  
+  &.medium .dot {
+    background: $accent-orange;
+  }
+  
+  &.slow .dot {
+    background: $primary-red;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  
+  .particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: $primary-red-light;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba($primary-red-light, 0.8);
+  }
+}
+
+// Responsive adjustments
+@include respond-to(sm) {
+  .loading-content {
+    gap: $spacing-6;
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .loading-content {
+    padding: $spacing-4;
+    gap: $spacing-4;
+  }
+  
+  .logo-container {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .loading-title {
+    font-size: $text-xl;
+  }
+  
+  .loading-subtitle {
+    font-size: $text-base;
+  }
+  
+  .loading-campus {
+    font-size: $text-sm;
+  }
+  
+  .progress-container {
+    max-width: 280px;
+  }
+}

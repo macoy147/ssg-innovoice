@@ -1,0 +1,142 @@
+@import './variables';
+@import './mixins';
+
+// Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+// Reset & Base Styles
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: $font-primary;
+  font-size: $text-base;
+  line-height: 1.6;
+  color: $color-grey-darker;
+  background-color: $color-grey-light;
+  overflow-x: hidden;
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-heading;
+  font-weight: 700;
+  line-height: 1.2;
+  color: $color-black;
+  margin-bottom: $spacing-4;
+}
+
+h1 { font-size: $text-5xl; }
+h2 { font-size: $text-4xl; }
+h3 { font-size: $text-3xl; }
+h4 { font-size: $text-2xl; }
+h5 { font-size: $text-xl; }
+h6 { font-size: $text-lg; }
+
+p {
+  margin-bottom: $spacing-4;
+}
+
+a {
+  color: $primary-red;
+  text-decoration: none;
+  @include transition(color $transition-fast);
+  
+  &:hover {
+    color: $primary-red-dark;
+  }
+}
+
+// Utility Classes
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-4;
+  
+  @include respond-to(md) {
+    padding: 0 $spacing-6;
+  }
+  
+  @include respond-to(lg) {
+    padding: 0 $spacing-8;
+  }
+}
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex-center { @include flex-center; }
+.flex-between { @include flex-between; }
+.flex-column { @include flex-column; }
+
+// Scrollbar Styling
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: $color-grey-light;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $primary-red;
+  border-radius: $radius-full;
+  
+  &:hover {
+    background: $primary-red-dark;
+  }
+}
+
+// Selection
+::selection {
+  background-color: $primary-red;
+  color: $color-white;
+}
+
+::-moz-selection {
+  background-color: $primary-red;
+  color: $color-white;
+}
+
+
+// Form Elements Reset
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  
+  &:focus {
+    outline: none;
+  }
+}
+
+// Ensure inputs are interactive
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  pointer-events: auto;
+}
