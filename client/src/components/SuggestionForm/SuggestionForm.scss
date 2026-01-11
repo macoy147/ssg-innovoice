@@ -1526,16 +1526,7 @@
   padding-top: $spacing-3;
   position: relative;
   
-  .footer-buttons {
-    display: flex;
-    justify-content: center;
-    gap: $spacing-3;
-    margin-bottom: $spacing-3;
-    flex-wrap: wrap;
-  }
-  
-  .track-suggestion-btn,
-  .admin-btn {
+  .track-suggestion-btn {
     display: inline-flex;
     align-items: center;
     gap: $spacing-2;
@@ -1548,6 +1539,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: all $transition-base;
+    margin-bottom: $spacing-3;
     backdrop-filter: blur(4px);
     
     &:hover {
@@ -1558,16 +1550,6 @@
     
     &:active {
       transform: translateY(0);
-    }
-  }
-  
-  .admin-btn {
-    background: rgba(102, 126, 234, 0.2);
-    border-color: rgba(102, 126, 234, 0.4);
-    
-    &:hover {
-      background: rgba(102, 126, 234, 0.35);
-      border-color: rgba(102, 126, 234, 0.6);
     }
   }
   
@@ -1821,15 +1803,9 @@
   .form-footer {
     padding-top: $spacing-3;
     
-    .footer-buttons {
-      flex-direction: column;
-      gap: $spacing-2;
-      
-      .track-suggestion-btn,
-      .admin-btn {
-        width: 100%;
-        justify-content: center;
-      }
+    .track-suggestion-btn {
+      width: 100%;
+      justify-content: center;
     }
     
     p {

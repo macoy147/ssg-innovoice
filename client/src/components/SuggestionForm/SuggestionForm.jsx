@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './SuggestionForm.scss';
 import TrackSuggestion from '../TrackSuggestion/TrackSuggestion';
-import AdminPanel from '../AdminPanel/AdminPanel';
 import API_URL from '../../config/api';
 
 // Toast Notification Component - Chat Head Style
@@ -116,7 +115,6 @@ const SuggestionForm = () => {
   const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({});
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [formData, setFormData] = useState({
     category: '',
     title: '',
@@ -787,20 +785,12 @@ const SuggestionForm = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <div className="footer-buttons">
-          <button 
-            className="track-suggestion-btn"
-            onClick={() => setIsTrackModalOpen(true)}
-          >
-            🔍 Track My Suggestion
-          </button>
-          <button 
-            className="admin-btn"
-            onClick={() => setIsAdminPanelOpen(true)}
-          >
-            🛡️ Admin
-          </button>
-        </div>
+        <button 
+          className="track-suggestion-btn"
+          onClick={() => setIsTrackModalOpen(true)}
+        >
+          🔍 Track My Suggestion
+        </button>
         <p>Supreme Student Government • CTU Daanbantayan Campus</p>
         <p className="policy-link">SSG InnoVoice: Student Suggestion System</p>
       </motion.footer>
@@ -810,11 +800,6 @@ const SuggestionForm = () => {
         isOpen={isTrackModalOpen} 
         onClose={() => setIsTrackModalOpen(false)} 
       />
-
-      {/* Admin Panel Modal */}
-      {isAdminPanelOpen && (
-        <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />
-      )}
     </div>
   );
 };

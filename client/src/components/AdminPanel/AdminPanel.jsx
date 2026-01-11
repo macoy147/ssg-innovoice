@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './AdminPanel.scss';
 import API_URL from '../../config/api';
 
@@ -26,9 +27,11 @@ const PRIORITY_OPTIONS = [
   { value: 'urgent', label: 'Urgent', color: '#ef4444' }
 ];
 
-function AdminPanel({ onClose }) {
+function AdminPanel() {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -58,7 +61,9 @@ function AdminPanel({ onClose }) {
     }
   }, [isAuthenticated, filters, pagination.page]);
 
-  const showNotification = (message, type = 'success') => {
+  const handleClose = () => {
+    navigate('/');
+  };  const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
@@ -217,27 +222,41 @@ function AdminPanel({ onClose }) {
   // Login Screen
   if (!isAuthenticated) {
     return (
-      <div className="admin-overlay">
-        <div className="admin-login">
-          <button className="close-btn" onClick={onClose}>×</button>
-          <div className="login-header">
-            <span className="lock-icon">🔐</span>
-            <h2>Admin Access</h2>
-            <p>Enter password to access the admin panel</p>
-          </div>
-          <form onSubmit={handleLogin}>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
-              autoFocus
-            />
-            {loginError && <div className="error-msg">{loginError}</div>}
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Verifying...' : 'Login'}
+      <div className="admin-page">
+        <div className="admin-login-page">
+          <div className="login-card">
+            <button className="back-home-btn" onClick={handleClose}>
+              ← Back to Home
             </button>
-          </form>
+            <div className="login-header">
+              <span className="lock-icon">🔐</span>
+              <h2>Admin Access</h2>
+              <p>Enter password to access the admin panel</p>
+            </div>
+            <form onSubmit={handleLogin}>
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter admin password"
+                  autoFocus
+                />
+                <button 
+                  type="button" 
+                  className="toggle-password-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+              {loginError && <div className="error-msg">{loginError}</div>}
+              <button type="submit" disabled={isLoading}>
+                {isLoading ? 'Verifying...' : 'Login'}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -245,8 +264,8 @@ function AdminPanel({ onClose }) {
 
   // Admin Dashboard
   return (
-    <div className="admin-overlay">
-      <div className="admin-panel">
+    <div className="admin-page">
+      <div className="admin-dashboard">
         {notification && (
           <div className={`admin-notification ${notification.type}`}>
             {notification.message}
@@ -257,14 +276,14 @@ function AdminPanel({ onClose }) {
         <div className="admin-header">
           <div className="header-left">
             <h1>🛡️ Admin Panel</h1>
-            <span className="subtitle">Voice It, Shape It - Management</span>
+            <span className="subtitle">SSG InnoVoice - Management</span>
           </div>
           <div className="header-right">
             <button className="refresh-btn" onClick={() => { fetchStats(); fetchSuggestions(); }}>
               🔄 Refresh
             </button>
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
-            <button className="close-btn" onClick={onClose}>×</button>
+            <button className="close-btn" onClick={handleClose}>×</button>
           </div>
         </div>
 

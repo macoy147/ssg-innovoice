@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoadingScreen from './components/LoadingScreen/LoadingScreen';
 import SuggestionForm from './components/SuggestionForm/SuggestionForm';
+import AdminPanel from './components/AdminPanel/AdminPanel';
 import './styles/global.scss';
 
 function App() {
@@ -16,7 +17,10 @@ function App() {
       {isLoading ? (
         <LoadingScreen onLoadComplete={handleLoadComplete} />
       ) : (
-        <SuggestionForm />
+        <Routes>
+          <Route path="/" element={<SuggestionForm />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
       )}
     </Router>
   );
