@@ -720,3 +720,219 @@
     font-style: italic;
   }
 }
+
+// Mobile Responsive Styles
+@media (max-width: 768px) {
+  .admin-overlay {
+    padding: 0;
+  }
+  
+  .admin-login {
+    padding: 24px;
+    margin: 16px;
+    border-radius: 12px;
+    
+    .login-header {
+      .lock-icon {
+        font-size: 36px;
+      }
+      
+      h2 {
+        font-size: 20px;
+      }
+    }
+  }
+  
+  .admin-panel {
+    border-radius: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+  
+  .admin-header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+    
+    .header-left {
+      h1 {
+        font-size: 16px;
+      }
+      
+      .subtitle {
+        font-size: 11px;
+      }
+    }
+    
+    .header-right {
+      gap: 6px;
+      
+      button {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+      
+      .refresh-btn {
+        display: none;
+      }
+    }
+  }
+  
+  .admin-tabs {
+    padding: 10px 16px;
+    gap: 8px;
+    overflow-x: auto;
+    
+    button {
+      padding: 8px 12px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+  }
+  
+  .dashboard-content {
+    padding: 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+    
+    .stat-icon {
+      font-size: 24px;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+    }
+  }
+  
+  .charts-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .chart-card {
+    padding: 16px;
+    
+    h3 {
+      font-size: 14px;
+    }
+  }
+  
+  .filters-bar {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 8px;
+    
+    input, select {
+      width: 100%;
+      min-width: unset;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+  }
+  
+  .suggestions-layout {
+    flex-direction: column;
+  }
+  
+  .suggestions-list {
+    width: 100%;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid #333;
+    padding: 12px;
+  }
+  
+  .suggestion-card {
+    padding: 12px;
+    
+    .card-title {
+      font-size: 13px;
+    }
+  }
+  
+  .detail-panel {
+    padding: 16px;
+    max-height: 50vh;
+  }
+  
+  .detail-header {
+    flex-direction: column;
+    gap: 12px;
+    
+    h3 {
+      font-size: 16px;
+    }
+    
+    .delete-btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+  
+  .detail-info {
+    .info-row {
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .label {
+      width: auto;
+      font-size: 11px;
+    }
+    
+    .value {
+      font-size: 13px;
+    }
+  }
+  
+  .status-actions, .priority-actions {
+    button {
+      padding: 6px 10px;
+      font-size: 11px;
+      flex: 1;
+      min-width: calc(33% - 6px);
+    }
+  }
+  
+  .pagination {
+    padding: 12px;
+    gap: 10px;
+    
+    button {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    
+    span {
+      font-size: 12px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+  
+  .status-actions, .priority-actions {
+    button {
+      min-width: calc(50% - 4px);
+    }
+  }
+}

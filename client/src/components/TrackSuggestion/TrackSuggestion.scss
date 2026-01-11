@@ -535,45 +535,159 @@
 
 // Responsive
 @media (max-width: $breakpoint-sm) {
+  .track-modal-overlay {
+    padding: $spacing-2;
+    align-items: flex-start;
+    padding-top: $spacing-4;
+  }
+  
   .track-modal {
     max-height: 95vh;
-    margin: $spacing-2;
+    margin: 0;
+    border-radius: $radius-md;
   }
   
   .track-modal-header {
-    padding: $spacing-4;
+    padding: $spacing-3;
+    gap: $spacing-2;
     
     .header-icon {
       font-size: 1.5rem;
     }
     
-    .header-text h2 {
-      font-size: $text-base;
+    .header-text {
+      h2 {
+        font-size: $text-base;
+      }
+      
+      p {
+        font-size: $text-xs;
+      }
     }
   }
   
   .track-form {
-    padding: $spacing-4;
+    padding: $spacing-3;
     
     .input-group {
       flex-direction: column;
+      gap: $spacing-2;
+      
+      input {
+        font-size: $text-sm;
+        padding: $spacing-3;
+      }
       
       .track-btn {
         width: 100%;
+        padding: $spacing-3;
       }
     }
   }
   
   .track-results {
-    padding: $spacing-4;
+    padding: $spacing-3;
+  }
+  
+  .status-banner {
+    padding: $spacing-2 $spacing-3;
+    font-size: $text-sm;
+    
+    .status-icon {
+      font-size: 1rem;
+    }
   }
   
   .progress-timeline {
+    padding: 0;
+    margin-bottom: $spacing-3;
+    
     .timeline-step {
-      .step-label {
+      .step-dot {
+        width: 22px;
+        height: 22px;
         font-size: 9px;
-        max-width: 50px;
+      }
+      
+      .step-label {
+        font-size: 8px;
+        max-width: 45px;
+      }
+      
+      .step-line {
+        left: calc(50% + 11px);
+        width: calc(100% - 22px);
       }
     }
+  }
+  
+  .suggestion-details {
+    .detail-card {
+      padding: $spacing-3;
+      
+      .detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $spacing-2;
+      }
+      
+      .suggestion-title {
+        font-size: $text-sm;
+      }
+      
+      .suggestion-content p {
+        font-size: $text-xs;
+      }
+      
+      .detail-footer {
+        flex-direction: column;
+        gap: $spacing-2;
+        
+        .footer-item {
+          .label, .value {
+            font-size: $text-xs;
+          }
+        }
+      }
+    }
+  }
+  
+  .status-history {
+    h4 {
+      font-size: $text-xs;
+    }
+    
+    .history-list {
+      padding-left: $spacing-3;
+    }
+    
+    .history-item {
+      .history-dot {
+        width: 10px;
+        height: 10px;
+        left: -19px;
+      }
+      
+      .history-content {
+        .history-status {
+          font-size: $text-xs;
+          padding: 3px 8px;
+        }
+        
+        .history-date {
+          font-size: 10px;
+        }
+        
+        .history-notes {
+          font-size: $text-xs;
+          padding: $spacing-2;
+        }
+      }
+    }
+  }
+  
+  .new-search-btn {
+    padding: $spacing-3;
+    font-size: $text-sm;
   }
 }

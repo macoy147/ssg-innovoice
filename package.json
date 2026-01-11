@@ -1,7 +1,7 @@
 {
-  "name": "voiceit-shapeit",
+  "name": "ssg-innovoice",
   "version": "1.0.0",
-  "description": "Voice It, Shape It - Student Suggestion System",
+  "description": "SSG InnoVoice - Speak Ideas. Spark Change.",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "npm run dev --prefix server",

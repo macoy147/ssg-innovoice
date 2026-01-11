@@ -1,7 +1,7 @@
 {
-  "name": "voice-it-shape-it-server",
+  "name": "ssg-innovoice-server",
   "version": "1.0.0",
-  "description": "Backend API for Voice It Shape It Student Suggestion Box",
+  "description": "Backend API for SSG InnoVoice Student Suggestion System",
   "main": "src/index.js",
   "type": "module",
   "scripts": {

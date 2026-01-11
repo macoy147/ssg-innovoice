@@ -140,3 +140,38 @@ select {
   user-select: text;
   pointer-events: auto;
 }
+
+// Mobile-specific improvements
+@media (max-width: 576px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  // Larger touch targets
+  button, 
+  input[type="submit"],
+  input[type="button"],
+  .btn {
+    min-height: 44px;
+  }
+  
+  // Prevent zoom on input focus (iOS)
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  
+  // Better scrolling
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}

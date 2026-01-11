@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.get('/', (req, res) => {
   res.json({
-    message: 'Voice It, Shape It API',
+    message: 'SSG InnoVoice API',
     version: '1.0.0',
     status: 'running'
   });

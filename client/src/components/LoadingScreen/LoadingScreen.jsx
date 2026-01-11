@@ -111,7 +111,7 @@ const LoadingScreen = ({ onLoadComplete }) => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            VOICE IT, SHAPE IT
+            SSG InnoVoice
           </motion.h1>
 
           <motion.p
@@ -120,7 +120,7 @@ const LoadingScreen = ({ onLoadComplete }) => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            Student Suggestion System
+            Speak Ideas. Spark Change.
           </motion.p>
 
           <motion.p

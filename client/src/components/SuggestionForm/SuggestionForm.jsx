@@ -301,8 +301,8 @@ const SuggestionForm = () => {
             <img src="/ctu_logo.jpg" alt="CTU Logo" className="ctu-logo" />
           </div>
           <div className="header-text">
-            <h1>Voice It, Shape It</h1>
-            <p>Student Suggestion System</p>
+            <h1>SSG InnoVoice</h1>
+            <p>Speak Ideas. Spark Change.</p>
             <span className="campus-name">CTU Daanbantayan Campus</span>
           </div>
           <div className="logo-wrapper">
@@ -802,7 +802,7 @@ const SuggestionForm = () => {
           </button>
         </div>
         <p>Supreme Student Government • CTU Daanbantayan Campus</p>
-        <p className="policy-link">Voice It, Shape It: Student Suggestion System</p>
+        <p className="policy-link">SSG InnoVoice: Student Suggestion System</p>
       </motion.footer>
 
       {/* Track Suggestion Modal */}

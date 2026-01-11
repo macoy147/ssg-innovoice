@@ -1586,8 +1586,138 @@
 
 // Responsive
 @media (max-width: $breakpoint-sm) {
+  .suggestion-form-container {
+    padding: $spacing-2;
+  }
+  
+  .form-header {
+    padding: $spacing-3;
+    margin-bottom: $spacing-3;
+    
+    .header-content {
+      gap: $spacing-2;
+    }
+    
+    .logo-wrapper {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .header-text {
+      h1 {
+        font-size: $text-lg;
+      }
+      
+      p {
+        font-size: $text-sm;
+      }
+      
+      .campus-name {
+        font-size: $text-xs;
+        padding: 2px $spacing-2;
+        
+        &::before {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+  
+  .progress-wrapper {
+    flex-direction: column;
+    gap: $spacing-2;
+    padding: 0 $spacing-2;
+  }
+  
+  .progress-steps {
+    padding: $spacing-2;
+    width: 100%;
+    justify-content: space-between;
+    
+    .step-wrapper {
+      .step {
+        .step-number {
+          width: 28px;
+          height: 28px;
+          font-size: $text-xs;
+        }
+        
+        .step-label {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+  
+  .chat-head-container {
+    position: fixed;
+    top: auto;
+    bottom: 80px;
+    right: $spacing-3;
+    z-index: 1000;
+  }
+  
   .suggestion-form {
     padding: $spacing-3;
+    margin: 0;
+    border-radius: $radius-md;
+  }
+  
+  .form-step {
+    .step-header {
+      h2 {
+        font-size: $text-lg;
+      }
+      
+      p {
+        font-size: $text-sm;
+      }
+    }
+  }
+  
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-2;
+  }
+  
+  .category-card {
+    padding: $spacing-3;
+    
+    .category-icon {
+      font-size: 1.5rem;
+    }
+    
+    h3 {
+      font-size: $text-sm;
+    }
+    
+    p {
+      font-size: $text-xs;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+  
+  .form-group {
+    label {
+      font-size: $text-sm;
+    }
+    
+    input, textarea, select {
+      padding: $spacing-2 $spacing-3;
+      font-size: $text-sm;
+    }
+    
+    textarea {
+      min-height: 100px;
+    }
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: $spacing-3;
   }
   
   .form-actions {
@@ -1596,18 +1726,158 @@
     
     .btn {
       width: 100%;
+      padding: $spacing-3;
     }
   }
   
-  .tracking-code-display {
+  .submission-type-toggle {
     flex-direction: column;
+    gap: $spacing-2;
+    
+    .toggle-option {
+      padding: $spacing-3;
+      
+      .option-icon {
+        font-size: 1.5rem;
+      }
+      
+      .option-content {
+        h3 {
+          font-size: $text-sm;
+        }
+        
+        p {
+          font-size: $text-xs;
+        }
+      }
+    }
   }
   
-  .tracking-code {
-    font-size: $text-lg !important;
+  .contact-fields {
+    .fields-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $spacing-1;
+      
+      h4 {
+        font-size: $text-sm;
+      }
+    }
   }
   
-  .category-grid {
-    grid-template-columns: 1fr;
+  .submission-summary {
+    padding: $spacing-3;
+    
+    h4 {
+      font-size: $text-sm;
+    }
+    
+    .summary-item {
+      font-size: $text-xs;
+    }
+  }
+  
+  .success-step {
+    padding: $spacing-4;
+    
+    .success-icon {
+      width: 60px;
+      height: 60px;
+      
+      span {
+        font-size: 1.5rem;
+      }
+    }
+    
+    h2 {
+      font-size: $text-xl;
+    }
+  }
+  
+  .tracking-code-box {
+    padding: $spacing-3;
+    
+    .tracking-code-display {
+      flex-direction: column;
+      gap: $spacing-2;
+      
+      .tracking-code {
+        font-size: $text-base !important;
+        word-break: break-all;
+      }
+      
+      .copy-btn {
+        width: 100%;
+      }
+    }
+  }
+  
+  .form-footer {
+    padding-top: $spacing-3;
+    
+    .footer-buttons {
+      flex-direction: column;
+      gap: $spacing-2;
+      
+      .track-suggestion-btn,
+      .admin-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+    
+    p {
+      font-size: 10px;
+    }
+  }
+}
+
+// Extra small devices
+@media (max-width: 360px) {
+  .suggestion-form-container {
+    padding: $spacing-1;
+  }
+  
+  .form-header {
+    padding: $spacing-2;
+    
+    .logo-wrapper {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .header-text {
+      h1 {
+        font-size: $text-base;
+      }
+      
+      p {
+        font-size: $text-xs;
+      }
+      
+      .campus-name {
+        display: none;
+      }
+    }
+  }
+  
+  .progress-steps {
+    .step-wrapper {
+      .step {
+        .step-number {
+          width: 24px;
+          height: 24px;
+          font-size: 10px;
+        }
+        
+        .step-label {
+          font-size: 9px;
+        }
+      }
+      
+      .step-connector {
+        width: 20px;
+      }
+    }
   }
 }
