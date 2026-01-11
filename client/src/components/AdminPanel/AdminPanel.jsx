@@ -122,8 +122,10 @@ function AdminPanel() {
     localStorage.setItem('adminDarkMode', JSON.stringify(darkMode));
   }, [darkMode]);
   
-  // Calculate unread count from server data
-  const unreadCount = stats?.unreadCount || 0;
+  // Calculate unread count - use stats if available, otherwise count from suggestions
+  const unreadCount = stats?.unreadCount !== undefined 
+    ? stats.unreadCount 
+    : suggestions.filter(s => !s.isRead).length;
   
   // Mark suggestion as read (server-side)
   const markAsRead = async (suggestionId) => {
@@ -155,7 +157,7 @@ function AdminPanel() {
   // Check if suggestion is unread
   const isUnread = (suggestionId) => {
     const suggestion = suggestions.find(s => s._id === suggestionId);
-    return suggestion ? !suggestion.isRead : false;
+    return suggestion ? suggestion.isRead !== true : false;
   };
 
   // Check if already authenticated (session storage)
