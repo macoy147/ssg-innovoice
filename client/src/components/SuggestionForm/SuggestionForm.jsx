@@ -294,6 +294,14 @@ const SuggestionForm = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Decorative floating shapes */}
+        <div className="header-decorations">
+          <span className="deco-shape shape-1"></span>
+          <span className="deco-shape shape-2"></span>
+          <span className="deco-shape shape-3"></span>
+          <span className="deco-shape shape-4"></span>
+        </div>
+        
         <div className="header-content">
           <div className="logo-wrapper">
             <img src="/ctu_logo.jpg" alt="CTU Logo" className="ctu-logo" />

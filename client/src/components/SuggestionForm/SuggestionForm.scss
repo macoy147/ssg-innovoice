@@ -331,8 +331,27 @@
   position: relative;
   overflow: hidden;
   
-  // Decorative gradient accent at top
+  // Grid pattern background
   &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(rgba($primary-red, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($primary-red, 0.03) 1px, transparent 1px),
+      linear-gradient(rgba($primary-red, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($primary-red, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+    background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  
+  // Decorative gradient accent at top
+  &::after {
     content: '';
     position: absolute;
     top: 0;
@@ -350,20 +369,7 @@
     animation: shimmer 3s ease-in-out infinite;
   }
   
-  // Subtle pattern overlay
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-      radial-gradient(circle at 10% 20%, rgba($primary-red, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 90% 80%, rgba($accent-orange, 0.04) 0%, transparent 50%);
-    pointer-events: none;
-  }
-  
+  // Decorative corner accents and radial glows
   .header-content {
     display: flex;
     flex-direction: row;
@@ -372,6 +378,99 @@
     gap: $spacing-4;
     position: relative;
     z-index: 1;
+    
+    // Radial glow effects
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba($primary-red, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse-glow 4s ease-in-out infinite;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -50%;
+      right: -20%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba($accent-orange, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse-glow 4s ease-in-out infinite 2s;
+    }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+  
+  // Decorative floating shapes
+  .header-decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  
+  .deco-shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.15;
+    
+    &.shape-1 {
+      width: 120px;
+      height: 120px;
+      top: -40px;
+      right: 10%;
+      background: linear-gradient(135deg, $primary-red, $accent-orange);
+      animation: float-shape 8s ease-in-out infinite;
+    }
+    
+    &.shape-2 {
+      width: 80px;
+      height: 80px;
+      bottom: -20px;
+      left: 5%;
+      background: linear-gradient(135deg, $accent-orange, $primary-red);
+      animation: float-shape 6s ease-in-out infinite 1s;
+    }
+    
+    &.shape-3 {
+      width: 40px;
+      height: 40px;
+      top: 30%;
+      left: 15%;
+      background: $primary-red;
+      border-radius: 8px;
+      transform: rotate(45deg);
+      animation: float-shape 7s ease-in-out infinite 0.5s;
+    }
+    
+    &.shape-4 {
+      width: 60px;
+      height: 60px;
+      top: 20%;
+      right: 5%;
+      background: $accent-orange;
+      border-radius: 8px;
+      transform: rotate(30deg);
+      animation: float-shape 9s ease-in-out infinite 2s;
+    }
+  }
+  
+  @keyframes float-shape {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
   }
   
   .logo-wrapper {

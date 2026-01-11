@@ -75,7 +75,21 @@ const suggestionSchema = new mongoose.Schema({
       default: Date.now
     },
     notes: String
-  }]
+  }],
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: {
+    type: Date
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date
+  }
 }, {
   timestamps: true
 });
