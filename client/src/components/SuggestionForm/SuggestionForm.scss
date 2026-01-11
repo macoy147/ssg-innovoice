@@ -1739,6 +1739,7 @@
 @media (max-width: $breakpoint-sm) {
   .suggestion-form-container {
     padding: $spacing-2;
+    overflow: visible; // Allow fixed positioned elements to show
   }
   
   .form-header {
@@ -1813,11 +1814,82 @@
   }
   
   .chat-head-container {
-    position: fixed;
-    top: auto;
-    bottom: 80px;
-    right: $spacing-3;
-    z-index: 1000;
+    position: sticky;
+    top: $spacing-2;
+    left: 0;
+    right: 0;
+    z-index: 99999;
+    margin-bottom: $spacing-2;
+    
+    .chat-head-toast {
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(30, 30, 50, 0.95);
+      padding: 10px 14px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      width: 100%;
+    }
+    
+    .chat-bubble {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      
+      .bubble-icon {
+        font-size: 14px;
+      }
+      
+      .progress-ring {
+        width: 36px;
+        height: 36px;
+        top: -2px;
+        left: -2px;
+      }
+    }
+    
+    .message-bubble {
+      flex: 1;
+      max-width: none;
+      background: transparent;
+      box-shadow: none;
+      border: none !important;
+      border-left: none !important;
+      
+      .message-content {
+        padding: 0;
+      }
+      
+      .message-text {
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      
+      .message-close {
+        color: rgba(255, 255, 255, 0.6);
+        
+        &:hover {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.15);
+        }
+      }
+      
+      .message-tail {
+        display: none;
+      }
+    }
+    
+    // Override border styles for all states
+    .chat-head-error .message-bubble,
+    .chat-head-success .message-bubble,
+    .chat-head-info .message-bubble {
+      border: none !important;
+      border-left: none !important;
+    }
   }
   
   .suggestion-form {

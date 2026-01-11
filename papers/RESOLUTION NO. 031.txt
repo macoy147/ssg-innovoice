@@ -1,0 +1,201 @@
+RESOLUTION NO. 031
+SERIES OF 2025-2026
+JANUARY 12, 2026
+AUTHOR: HON. MARCO C. MONTELLANO
+CO-AUTHOR: HON. LESLIE JANE DELA PEÑA
+
+A RESOLUTION TO PROPOSE THE 'SSG INNOVOICE: DIGITAL STUDENT SUGGESTION SYSTEM' AS MEANS OF PROMOTING STUDENT FEEDBACK AND IDEAS AT CEBU TECHNOLOGICAL UNIVERSITY–DAANBANTAYAN CAMPUS
+
+WHEREAS, as stipulated in the Cebu Technological University Student Manual 2015, Article III, Section 3, it is the responsibility of every student and student organization to follow the laws promulgated by the Supreme Student Government;
+
+WHEREAS, as stipulated in the Supreme Student Government Constitution and By-Laws, Article IV, Section 1, the Supreme Student Government is mandated to defend the rights and promote the welfare of students and to act as a channel for complaints by students on matters affecting their welfare;
+
+WHEREAS, the primary objective of this policy is to provide a structured mechanism for collecting student feedback and ideas to address student needs, improve campus services, and foster a collaborative community;
+
+WHEREAS, the successful implementation of this policy requires the active involvement of the Supreme Student Government, campus administration, and relevant departments;
+
+WHEREAS, the advancement of digital technology provides an opportunity to create a more accessible, efficient, and environmentally sustainable feedback system through a web-based application;
+
+WHEREAS, the following provisions, sanctions, or specifications are essential for proper implementation which are as follows;
+
+I.	Purpose and Scope
+•	The SSG InnoVoice Digital Student Suggestion System aims to provide an accessible online platform for students to share feedback, suggestions, and innovative ideas to improve campus life, academic services, and student welfare.
+•	This policy shall apply to all enrolled students of Cebu Technological University–Daanbantayan Campus, covering feedback on academic, administrative, and extracurricular matters.
+
+II.	Implementation of the Web Application
+•	A dedicated web application named "SSG InnoVoice" with the tagline "Speak Ideas. Spark Change." shall be developed and deployed to serve as the primary platform for student feedback submission.
+•	The web application shall be accessible via any internet-connected device (smartphones, tablets, computers) through a web browser, ensuring 24/7 availability for student submissions.
+•	QR codes linking to the web application shall be posted in accessible locations such as the library, student lounge, main administrative building, and campus bulletin boards.
+•	The web application shall feature a user-friendly interface with clear instructions and categorized submission options.
+
+III.	Web Application Features
+•	The SSG InnoVoice web application shall include the following features:
+	o	Suggestion Submission Form: A structured form allowing students to submit feedback with category selection (Academic Services, Administrative Matters, Extracurricular Activities, Campus Facilities, Student Welfare, and Other).
+	o	Anonymity Option: Students may choose to submit anonymously or provide contact information for follow-up.
+	o	Tracking System: Each submission shall generate a unique tracking code, allowing students to monitor the status of their suggestion.
+	o	Status Updates: Students can track their suggestion's progress through statuses such as Pending, Under Review, In Progress, Implemented, and Declined.
+	o	Admin Panel: A secure administrative interface for the Feedback Committee to manage, review, categorize, and update suggestion statuses.
+
+IV.	Management, Review, and Evaluation
+•	The Supreme Student Government, with the guidance of the Supreme Student Government Adviser, shall designate a Feedback Committee to review and categorize suggestions through the admin panel on a regular basis.
+•	The Feedback Committee shall forward relevant suggestions to the appropriate campus departments for action and update the status of suggestions in the system to keep students informed.
+•	A feedback mechanism shall be provided within the web application to assess its effectiveness and accessibility, allowing students to rate the system's impact.
+•	The Supreme Student Government shall conduct a semester-end evaluation to review the system's outcomes and identify areas for improvement or future sustainability.
+
+NOW, THEREFORE, BE IT RESOLVED, as it is hereby resolved by the Supreme Student Government of Cebu Technological University–Daanbantayan Campus, that the digital system entitled 'SSG InnoVoice: Digital Student Suggestion System' is adopted with the intent to enhance student participation and welfare through a modern, accessible, and efficient web-based feedback mechanism, with the guidance and approval signed by the SSG Adviser to ensure proper coordination and correlation.
+
+BE IT RESOLVED, that this policy shall take effect starting immediately upon approval by the appropriate campus authorities, and all relevant parties shall be informed accordingly;
+
+BE IT FURTHER RESOLVED, that the Supreme Student Government shall coordinate with the Office of the Campus Director, Dean of Instruction, Dean of Student Affairs and Services, Supreme Student Government Adviser, and other concerned offices for proper implementation and monitoring;
+
+BE IT FURTHER RESOLVED, that a regular review shall be conducted every month to assess its impact and make necessary revisions;
+
+BE IT FINALLY RESOLVED, that a copy of this resolution be furnished to the Office of the Campus Director, Dean of Instruction, and Dean of Student Affairs and Services for review and its foregoing appropriation.
+
+Proposed by: 
+
+
+MARCO C. MONTELLANO
+SSG Senator
+
+Attested by: 
+
+
+JASON B. PEJANA
+SSG President
+
+Noted by:
+
+
+NIKKITHEA L. BEDUYA
+SSG Adviser
+
+
+
+
+
+Recommending Approval:
+
+
+RICKY T. DERECHO
+Dean of Student Affairs and Services
+
+
+FELIXBERTO T. LUCABON, JR.
+Assistant Campus Director & Dean of Instruction
+
+
+Approved by:
+
+
+RUBEN M. UNGUI
+Campus Director
+
+ 
+ 
+I. Introduction & Purpose
+Pursuant to Supreme Student Government Resolution No. 031, Series of 2025-2026, these guidelines are established to ensure the transparent, fair, and efficient implementation of the 'SSG InnoVoice: Digital Student Suggestion System'. The system aims to provide a modern, accessible mechanism for collecting student feedback and ideas to address student needs, improve campus services, and foster a collaborative community at Cebu Technological University–Daanbantayan Campus.
+
+II. Governing Committee
+A Feedback Committee shall be formed to oversee the entire process. The committee shall be composed of:
+•	Chairperson: Hon. Marco C. Montellano (Senator)
+•	Co-Chairperson: Hon. Leslie Jane Dela Peña (Senator)
+•	Members: Selected Supreme Student Government officers and volunteers, appointed by the Supreme Student Government President
+•	Adviser: Nikkithea L. Beduya
+The committee shall coordinate with the Dean of Student Affairs and Services, Dean of Instruction, and Campus Director for approvals and oversight.
+
+III. Implementation Process
+
+A. Web Application Setup and Operation
+1.	Deployment of SSG InnoVoice Web Application:
+	o	The SSG InnoVoice web application shall be deployed and accessible online via any web browser on smartphones, tablets, and computers.
+	o	The web application shall be available 24/7, allowing students to submit suggestions at their convenience.
+	o	QR codes linking to the web application shall be posted in accessible locations on campus, including the library, student lounge, main administrative building, and campus bulletin boards.
+
+2.	Web Application Features:
+	o	Suggestion Form: A user-friendly form with fields for category selection, suggestion details, and optional contact information.
+	o	Categories: Academic Services, Administrative Matters, Extracurricular Activities, Campus Facilities, Student Welfare, and Other.
+	o	Tracking Code: Upon submission, students receive a unique tracking code to monitor their suggestion's status.
+	o	Status Tracking: Students can check their suggestion's progress (Pending, Under Review, In Progress, Implemented, Declined) using their tracking code.
+	o	Admin Panel: A secure dashboard for the Feedback Committee to manage submissions, update statuses, add notes, and archive resolved suggestions.
+
+3.	Anonymity and Submission:
+	o	All submissions shall ensure anonymity by default to encourage honest feedback.
+	o	Students may optionally provide their name, email, and contact number if they wish to receive follow-up communication.
+	o	The system shall protect student privacy and data in accordance with applicable data protection guidelines.
+
+4.	Review Schedule:
+	o	The Feedback Committee shall review new submissions through the admin panel on a weekly basis.
+	o	Urgent matters shall be prioritized and addressed promptly.
+
+B. Eligibility and Participation
+1.	Eligibility Criteria:
+	o	All bona fide students of Cebu Technological University–Daanbantayan Campus may participate, as defined in the Supreme Student Government Constitution and By-Laws, Article V, Section 1.
+	o	Students must provide valid contact information if follow-up is requested for non-anonymous submissions.
+
+2.	Types of Feedback:
+	o	Suggestions may cover academic, administrative, extracurricular, facilities, and student welfare matters.
+	o	Prohibited submissions include offensive language, personal attacks, discriminatory content, or unrelated material. Such submissions will be declined without action.
+
+3.	Sanctions for Violations:
+	o	If a non-anonymous submission violates guidelines (e.g., harassment, false information), it may result in a warning or referral to the Dean of Student Affairs and Services for disciplinary action, per the Cebu Technological University Student Manual.
+
+C. Announcement and Dissemination
+1.	The Supreme Student Government shall announce the SSG InnoVoice web application, guidelines, and submission process at the beginning of each semester through:
+	o	Official Supreme Student Government social media pages (Facebook, etc.).
+	o	Student orientations, coordinated by the Supreme Student Government Press Secretary and Social Media Manager.
+	o	Campus-wide announcements and classroom visits.
+
+2.	Promotional materials including posters with QR codes linking to the web application shall be displayed on campus bulletin boards and strategic locations.
+
+3.	The announcement shall explicitly state the purpose, anonymity assurance, tracking feature, and how feedback will be used.
+
+D. Management, Review, and Evaluation
+1.	Weekly Review Process:
+	o	The Feedback Committee shall access the admin panel weekly to review, categorize, and process all submissions.
+	o	Relevant suggestions shall be forwarded to appropriate campus departments (e.g., Dean of Instruction for academic concerns) with a summary report.
+	o	The committee shall update suggestion statuses in the system and provide regular updates via Supreme Student Government social media.
+
+2.	Status Updates:
+	o	Students may check their suggestion's status anytime using their unique tracking code on the web application.
+	o	Status options include: Pending, Under Review, In Progress, Implemented, and Declined.
+	o	Admin notes may be added to provide context on actions taken or reasons for decisions.
+
+3.	Feedback Mechanism for the System:
+	o	A separate feedback form shall be provided for students to rate the SSG InnoVoice system's effectiveness and accessibility.
+	o	The link to this form shall be posted on Supreme Student Government social media channels.
+
+4.	Semester-End Evaluation:
+	o	The Supreme Student Government shall conduct a semester-end evaluation to assess the system's outcomes, including:
+		▪	Number of submissions received.
+		▪	Categories of feedback.
+		▪	Actions taken and their impact.
+		▪	Student ratings from the feedback mechanism.
+		▪	System performance and accessibility metrics.
+	o	The evaluation report shall be submitted to the Supreme Student Government Adviser, Dean of Student Affairs and Services, and Campus Director for review.
+
+5.	Monthly Review:
+	o	The Supreme Student Government shall conduct monthly reviews to assess the system's progress and make necessary adjustments, in line with Resolution No. 031.
+
+E. Disqualification and Sanctions
+1.	Grounds for Disqualification or Rejection:
+	o	Submissions with offensive, discriminatory, or irrelevant content.
+	o	Repeated misuse by a non-anonymous submitter (e.g., spam submissions).
+	o	Providing false contact information for follow-up.
+
+2.	Process for Sanctions:
+	o	Invalid submissions shall be marked as Declined and not actioned.
+	o	For non-anonymous violations, the Supreme Student Government shall investigate in coordination with Student Affairs and Services. The student shall receive a written notice and an opportunity to explain in a hearing.
+	o	Based on evidence, sanctions (e.g., warning, temporary restriction from submitting) shall be recommended to the Supreme Student Government President and the Dean of Student Affairs and Services.
+	o	Restricted students may resume participation after one semester, subject to Supreme Student Government approval.
+
+F. Technical Specifications
+1.	The SSG InnoVoice web application shall be:
+	o	Responsive and mobile-friendly, accessible on all device types.
+	o	Hosted on reliable web hosting services to ensure uptime and availability.
+	o	Secured with appropriate measures to protect student data and privacy.
+
+2.	System maintenance and updates shall be coordinated by the Supreme Student Government in consultation with technical support as needed.
+
+G. Effectivity
+These guidelines shall take effect in the First Semester of Academic Year 2025-2026, following the approval of Supreme Student Government Resolution No. 031, Series of 2025-2026.
