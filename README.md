@@ -67,7 +67,7 @@ npm run dev
 
 ## 🔐 Admin Access
 
-Password: `ssg2526admin`
+Password is set in Render environment variables.
 
 ---
 
