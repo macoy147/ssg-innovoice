@@ -204,7 +204,9 @@
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 100%);
   padding: $spacing-4;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
   
   // Animated gradient mesh background
   &::before {
