@@ -90,7 +90,7 @@ const LoadingScreen = ({ onLoadComplete }) => {
               }}
             />
             <motion.img 
-              src="/ssg-logo.jpg" 
+              src="/ssg-logo.png" 
               alt="SSG Logo" 
               className="ssg-logo"
               animate={{

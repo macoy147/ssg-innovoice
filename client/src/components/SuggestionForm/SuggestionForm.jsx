@@ -306,7 +306,7 @@ const SuggestionForm = () => {
             <span className="campus-name">CTU Daanbantayan Campus</span>
           </div>
           <div className="logo-wrapper">
-            <img src="/ssg-logo.jpg" alt="SSG Logo" className="ssg-logo" />
+            <img src="/ssg-logo.png" alt="SSG Logo" className="ssg-logo" />
           </div>
         </div>
       </motion.div>
