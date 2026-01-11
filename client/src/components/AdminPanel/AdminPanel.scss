@@ -1514,6 +1514,412 @@
   }
 }
 
+// Status Update Modal
+.status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 600;
+  animation: fadeIn 0.2s ease;
+}
+
+.status-update-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 480px;
+  z-index: 601;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.status-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, var(--status-color, #667eea) 0%, color-mix(in srgb, var(--status-color, #667eea) 70%, #000) 100%);
+  position: relative;
+  
+  .status-modal-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+  
+  .status-modal-title {
+    flex: 1;
+    
+    h3 {
+      margin: 0;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    p {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+      
+      strong {
+        color: #fff;
+      }
+    }
+  }
+  
+  .close-status-modal {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.status-modal-body {
+  padding: 24px;
+}
+
+.status-change-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  
+  .status-from, .status-to {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    
+    .status-label {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+    }
+  }
+  
+  .status-arrow {
+    color: #667eea;
+    animation: arrowPulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes arrowPulse {
+    0%, 100% { transform: translateX(0); opacity: 1; }
+    50% { transform: translateX(5px); opacity: 0.7; }
+  }
+}
+
+.note-input-section {
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 10px;
+    
+    svg {
+      color: #667eea;
+    }
+  }
+  
+  textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: #0f0f1a;
+    border: 2px solid #333;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.3s;
+    
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    &::placeholder {
+      color: #555;
+    }
+  }
+}
+
+.status-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #333;
+  
+  .cancel-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 10px;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      border-color: #666;
+      color: #fff;
+    }
+  }
+  
+  .confirm-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--btn-color, #667eea) 0%, color-mix(in srgb, var(--btn-color, #667eea) 70%, #000) 100%);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// Delete Confirmation Modal
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 600;
+  animation: fadeIn 0.2s ease;
+}
+
+.delete-confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 420px;
+  z-index: 601;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(239, 68, 68, 0.2);
+  animation: deleteModalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  text-align: center;
+}
+
+@keyframes deleteModalIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.delete-modal-icon {
+  padding: 30px 24px 20px;
+  
+  .icon-circle {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    animation: iconPulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes iconPulse {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% { 
+      transform: scale(1.05);
+      box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.2);
+    }
+  }
+}
+
+.delete-modal-content {
+  padding: 0 24px 24px;
+  
+  h3 {
+    margin: 0 0 10px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  
+  > p {
+    margin: 0 0 20px;
+    color: #888;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.delete-preview-card {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    
+    .tracking-code {
+      font-family: monospace;
+      font-size: 12px;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    
+    .category {
+      font-size: 11px;
+      color: #888;
+      text-transform: capitalize;
+    }
+  }
+  
+  h4 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  
+  .preview-content {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #333;
+  
+  .cancel-btn {
+    flex: 1;
+    padding: 14px 20px;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 10px;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      border-color: #666;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+  
+  .confirm-delete-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
 // Results info bar
 .results-info-bar {
   display: flex;
@@ -1669,6 +2075,31 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(100vh - 280px);
+  
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: background 0.3s;
+    
+    &:hover {
+      background: linear-gradient(180deg, #7b8ff0 0%, #8a5db8 100%);
+    }
+  }
+  
+  // Firefox scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: #667eea rgba(255, 255, 255, 0.05);
 
   .loading, .empty {
     text-align: center;
@@ -2305,9 +2736,12 @@
         background: rgba(255,255,255,0.2);
         border: none;
         color: #fff;
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        max-width: 40px;
+        min-height: 40px;
+        max-height: 40px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -2315,6 +2749,8 @@
         cursor: pointer;
         transition: all 0.2s;
         flex-shrink: 0;
+        padding: 0;
+        aspect-ratio: 1 / 1;
         
         svg {
           width: 20px;
@@ -3019,6 +3455,110 @@
     }
   }
 
+  // Status Update Modal - Light Mode
+  .status-update-modal {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+  
+  .status-modal-body {
+    .status-change-preview {
+      background: rgba(0, 0, 0, 0.03);
+      
+      .status-label {
+        color: #64748b;
+      }
+    }
+    
+    .note-input-section {
+      label {
+        color: #64748b;
+      }
+      
+      textarea {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #1e293b;
+        
+        &:focus {
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        &::placeholder {
+          color: #94a3b8;
+        }
+      }
+    }
+  }
+  
+  .status-modal-footer {
+    background: rgba(0, 0, 0, 0.02);
+    border-top-color: #e2e8f0;
+    
+    .cancel-btn {
+      border-color: #e2e8f0;
+      color: #64748b;
+      
+      &:hover {
+        border-color: #cbd5e1;
+        color: #1e293b;
+      }
+    }
+  }
+
+  // Delete Confirmation Modal - Light Mode
+  .delete-confirm-modal {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.1);
+  }
+  
+  .delete-modal-icon {
+    .icon-circle {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+  }
+  
+  .delete-modal-content {
+    h3 {
+      color: #1e293b;
+    }
+    
+    > p {
+      color: #64748b;
+    }
+  }
+  
+  .delete-preview-card {
+    background: rgba(239, 68, 68, 0.03);
+    border-color: rgba(239, 68, 68, 0.15);
+    
+    h4 {
+      color: #1e293b;
+    }
+    
+    .preview-content {
+      color: #64748b;
+    }
+  }
+  
+  .delete-modal-actions {
+    background: rgba(0, 0, 0, 0.02);
+    border-top-color: #e2e8f0;
+    
+    .cancel-btn {
+      border-color: #e2e8f0;
+      color: #64748b;
+      
+      &:hover {
+        border-color: #cbd5e1;
+        color: #1e293b;
+        background: rgba(0, 0, 0, 0.03);
+      }
+    }
+  }
+
   // Results info bar in light mode
   .results-info-bar {
     background: rgba(102, 126, 234, 0.03);
@@ -3078,6 +3618,21 @@
   // Suggestions List
   .suggestions-list {
     border-right-color: #e2e8f0;
+    
+    // Light mode scrollbar
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+      
+      &:hover {
+        background: linear-gradient(180deg, #5a72d9 0%, #6a4299 100%);
+      }
+    }
+    
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.03);
 
     .loading, .empty {
       color: #64748b;

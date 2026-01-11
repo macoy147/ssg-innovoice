@@ -116,6 +116,15 @@ function AdminPanel() {
     const saved = localStorage.getItem('adminDarkMode');
     return saved !== null ? JSON.parse(saved) : true;
   });
+  
+  // Status update modal state
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
+  const [statusNote, setStatusNote] = useState('');
+  
+  // Delete confirmation modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   // Save theme preference
   useEffect(() => {
@@ -346,8 +355,6 @@ function AdminPanel() {
   };
 
   const deleteSuggestion = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this suggestion?')) return;
-    
     try {
       const res = await fetch(`${API_URL}/api/admin/suggestions/${id}`, {
         method: 'DELETE',
@@ -358,6 +365,8 @@ function AdminPanel() {
       if (data.success) {
         showNotification('Suggestion deleted');
         setSelectedSuggestion(null);
+        setDeleteModalOpen(false);
+        setPendingDelete(null);
         fetchSuggestions();
         fetchStats();
       }
@@ -590,6 +599,141 @@ function AdminPanel() {
                   }}
                 >
                   Apply Range
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Status Update Modal */}
+        {statusModalOpen && pendingStatus && (
+          <>
+            <div className="status-modal-overlay" onClick={() => setStatusModalOpen(false)} />
+            <div className="status-update-modal">
+              <div className="status-modal-header" style={{ '--status-color': pendingStatus.color }}>
+                <div className="status-modal-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                </div>
+                <div className="status-modal-title">
+                  <h3>Update Status</h3>
+                  <p>Change to <strong>{pendingStatus.label}</strong></p>
+                </div>
+                <button className="close-status-modal" onClick={() => setStatusModalOpen(false)}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="status-modal-body">
+                <div className="status-change-preview">
+                  <div className="status-from">
+                    <span className="status-label">Current</span>
+                    <span 
+                      className="status-badge" 
+                      style={{ background: getStatusInfo(selectedSuggestion?.status).color }}
+                    >
+                      {getStatusInfo(selectedSuggestion?.status).label}
+                    </span>
+                  </div>
+                  <div className="status-arrow">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                      <path d="M16.01 11H4v2h12.01v3L20 12l-3.99-4z"/>
+                    </svg>
+                  </div>
+                  <div className="status-to">
+                    <span className="status-label">New</span>
+                    <span 
+                      className="status-badge" 
+                      style={{ background: pendingStatus.color }}
+                    >
+                      {pendingStatus.label}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="note-input-section">
+                  <label htmlFor="status-note">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Add a note (optional)
+                  </label>
+                  <textarea
+                    id="status-note"
+                    placeholder="Enter any notes about this status change..."
+                    value={statusNote}
+                    onChange={(e) => setStatusNote(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              
+              <div className="status-modal-footer">
+                <button className="cancel-btn" onClick={() => setStatusModalOpen(false)}>
+                  Cancel
+                </button>
+                <button 
+                  className="confirm-btn"
+                  style={{ '--btn-color': pendingStatus.color }}
+                  onClick={() => {
+                    updateStatus(selectedSuggestion._id, pendingStatus.value, statusNote);
+                    setStatusModalOpen(false);
+                    setStatusNote('');
+                    setPendingStatus(null);
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                  Update Status
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && pendingDelete && (
+          <>
+            <div className="delete-modal-overlay" onClick={() => setDeleteModalOpen(false)} />
+            <div className="delete-confirm-modal">
+              <div className="delete-modal-icon">
+                <div className="icon-circle">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <div className="delete-modal-content">
+                <h3>Delete Suggestion?</h3>
+                <p>This action cannot be undone. The following suggestion will be permanently removed:</p>
+                
+                <div className="delete-preview-card">
+                  <div className="preview-header">
+                    <span className="tracking-code">{pendingDelete.trackingCode}</span>
+                    <span className="category">{pendingDelete.category}</span>
+                  </div>
+                  <h4>{pendingDelete.title}</h4>
+                  <p className="preview-content">{pendingDelete.content?.substring(0, 100)}{pendingDelete.content?.length > 100 ? '...' : ''}</p>
+                </div>
+              </div>
+              
+              <div className="delete-modal-actions">
+                <button className="cancel-btn" onClick={() => {
+                  setDeleteModalOpen(false);
+                  setPendingDelete(null);
+                }}>
+                  Cancel
+                </button>
+                <button className="confirm-delete-btn" onClick={() => deleteSuggestion(pendingDelete._id)}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Delete Permanently
                 </button>
               </div>
             </div>
@@ -1259,7 +1403,13 @@ function AdminPanel() {
                               </svg>
                               {selectedSuggestion.isArchived ? 'Unarchive' : 'Archive'}
                             </button>
-                            <button className="delete-btn" onClick={() => deleteSuggestion(selectedSuggestion._id)}>
+                            <button 
+                              className="delete-btn" 
+                              onClick={() => {
+                                setPendingDelete(selectedSuggestion);
+                                setDeleteModalOpen(true);
+                              }}
+                            >
                               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                               </svg>
@@ -1311,8 +1461,9 @@ function AdminPanel() {
                             className={`status-btn ${selectedSuggestion.status === opt.value ? 'active' : ''}`}
                             style={{ '--btn-color': opt.color }}
                             onClick={() => {
-                              const notes = prompt('Add a note (optional):');
-                              updateStatus(selectedSuggestion._id, opt.value, notes || '');
+                              setPendingStatus(opt);
+                              setStatusNote('');
+                              setStatusModalOpen(true);
                             }}
                           >
                             {opt.label}
