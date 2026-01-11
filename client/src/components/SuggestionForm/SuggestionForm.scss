@@ -1695,6 +1695,14 @@
   padding-top: $spacing-3;
   position: relative;
   
+  .footer-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-2;
+    margin-bottom: $spacing-3;
+  }
+  
   .track-suggestion-btn {
     display: inline-flex;
     align-items: center;
@@ -1708,7 +1716,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: all $transition-base;
-    margin-bottom: $spacing-3;
     backdrop-filter: blur(4px);
     
     &:hover {
@@ -1719,6 +1726,42 @@
     
     &:active {
       transform: translateY(0);
+    }
+  }
+  
+  .about-info-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border-radius: 50%;
+    background: rgba($color-white, 0.1);
+    border: 1px solid rgba($color-white, 0.25);
+    color: rgba($color-white, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+    padding: 0;
+    aspect-ratio: 1 / 1;
+    
+    &:hover {
+      background: rgba($color-white, 0.2);
+      border-color: rgba($color-white, 0.4);
+      color: #fff;
+      transform: scale(1.1);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+    
+    svg {
+      width: 18px;
+      height: 18px;
     }
   }
   
@@ -2050,9 +2093,21 @@
   .form-footer {
     padding-top: $spacing-3;
     
+    .footer-buttons {
+      flex-direction: row;
+      gap: $spacing-2;
+    }
+    
     .track-suggestion-btn {
-      width: 100%;
+      flex: 1;
       justify-content: center;
+    }
+    
+    .about-info-btn {
+      width: 38px !important;
+      height: 38px !important;
+      min-width: 38px !important;
+      min-height: 38px !important;
     }
     
     p {
@@ -2114,5 +2169,288 @@
         width: 20px;
       }
     }
+  }
+}
+
+
+// ============================================
+// ABOUT MODAL
+// ============================================
+
+// About Modal Overlay
+.about-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  padding: $spacing-4;
+}
+
+// About Modal
+.about-modal {
+  background: #fff;
+  border-radius: $radius-lg;
+  max-width: 550px;
+  width: 100%;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.about-modal-header {
+  background: linear-gradient(135deg, $primary-red 0%, #c41e3a 100%);
+  color: #fff;
+  padding: $spacing-4;
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  position: relative;
+  
+  .about-modal-icon {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: $text-lg;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+  }
+  
+  .about-modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.1);
+    }
+  }
+}
+
+.about-modal-content {
+  padding: $spacing-4;
+  overflow-y: auto;
+  flex: 1;
+  
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary-red, 0.3);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba($primary-red, 0.5);
+    }
+  }
+}
+
+.about-section {
+  margin-bottom: $spacing-4;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  h3 {
+    font-size: $text-base;
+    font-weight: 700;
+    color: $color-grey-darker;
+    margin-bottom: $spacing-2;
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+  }
+  
+  p {
+    font-size: $text-sm;
+    color: $color-grey-dark;
+    line-height: 1.6;
+    margin: 0;
+    
+    strong {
+      color: $primary-red;
+    }
+  }
+  
+  ul {
+    margin: 0;
+    padding-left: $spacing-4;
+    
+    li {
+      font-size: $text-sm;
+      color: $color-grey-dark;
+      line-height: 1.6;
+      margin-bottom: $spacing-1;
+      
+      strong {
+        color: $color-grey-darker;
+      }
+    }
+  }
+  
+  &.guidelines {
+    background: #fef3f3;
+    padding: $spacing-3;
+    border-radius: $radius-md;
+    border-left: 4px solid $primary-red;
+    
+    h3 {
+      color: $primary-red;
+    }
+  }
+}
+
+.status-list {
+  list-style: none;
+  padding: 0;
+  
+  li {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    margin-bottom: $spacing-2;
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-full;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 90px;
+  text-align: center;
+  
+  &.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  
+  &.review {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  
+  &.progress {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  
+  &.implemented {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  
+  &.declined {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.about-modal-footer {
+  background: #f8f9fa;
+  padding: $spacing-3 $spacing-4;
+  text-align: center;
+  border-top: 1px solid #eee;
+  
+  p {
+    font-size: $text-xs;
+    color: $color-grey;
+    margin: 0;
+    
+    &.resolution-note {
+      font-weight: 600;
+      color: $primary-red;
+      margin-top: 4px;
+    }
+  }
+}
+
+// Mobile responsive for About Modal
+@media (max-width: $breakpoint-sm) {
+  .about-modal-overlay {
+    padding: $spacing-2;
+    align-items: flex-end;
+  }
+  
+  .about-modal {
+    max-height: 90vh;
+    border-radius: $radius-lg $radius-lg 0 0;
+  }
+  
+  .about-modal-header {
+    padding: $spacing-3;
+    
+    .about-modal-icon {
+      font-size: 1.5rem;
+    }
+    
+    h2 {
+      font-size: $text-base;
+    }
+    
+    .about-modal-close {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
+      padding: 0 !important;
+      aspect-ratio: 1 / 1 !important;
+      flex-shrink: 0 !important;
+    }
+  }
+  
+  .about-modal-content {
+    padding: $spacing-3;
+  }
+  
+  .about-section {
+    margin-bottom: $spacing-3;
+    
+    h3 {
+      font-size: $text-sm;
+    }
+    
+    p, ul li {
+      font-size: $text-xs;
+    }
+  }
+  
+  .status-badge {
+    font-size: 10px;
+    min-width: 80px;
+    padding: 2px 8px;
   }
 }

@@ -115,6 +115,7 @@ const SuggestionForm = () => {
   const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({});
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     category: '',
     title: '',
@@ -793,12 +794,25 @@ const SuggestionForm = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <button 
-          className="track-suggestion-btn"
-          onClick={() => setIsTrackModalOpen(true)}
-        >
-          🔍 Track My Suggestion
-        </button>
+        <div className="footer-buttons">
+          <button 
+            className="track-suggestion-btn"
+            onClick={() => setIsTrackModalOpen(true)}
+          >
+            🔍 Track My Suggestion
+          </button>
+          <button 
+            className="about-info-btn"
+            onClick={() => setIsAboutModalOpen(true)}
+            aria-label="About this system"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </button>
+        </div>
         <p>Supreme Student Government • CTU Daanbantayan Campus</p>
         <p className="policy-link">SSG InnoVoice: Student Suggestion System</p>
       </motion.footer>
@@ -808,6 +822,94 @@ const SuggestionForm = () => {
         isOpen={isTrackModalOpen} 
         onClose={() => setIsTrackModalOpen(false)} 
       />
+
+      {/* About System Modal */}
+      <AnimatePresence>
+        {isAboutModalOpen && (
+          <motion.div 
+            className="about-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsAboutModalOpen(false)}
+          >
+            <motion.div 
+              className="about-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="about-modal-header">
+                <div className="about-modal-icon">📜</div>
+                <h2>About SSG InnoVoice</h2>
+                <button 
+                  className="about-modal-close"
+                  onClick={() => setIsAboutModalOpen(false)}
+                  aria-label="Close"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="about-modal-content">
+                <div className="about-section">
+                  <h3>🎯 Purpose</h3>
+                  <p>SSG InnoVoice is a digital student suggestion system that provides an accessible online platform for students to share feedback, suggestions, and innovative ideas to improve campus life, academic services, and student welfare.</p>
+                </div>
+
+                <div className="about-section">
+                  <h3>📋 Legal Basis</h3>
+                  <p>Established under <strong>SSG Resolution No. 031, Series of 2025-2026</strong>, authored by Hon. Marco C. Montellano and co-authored by Hon. Leslie Jane Dela Peña.</p>
+                </div>
+
+                <div className="about-section">
+                  <h3>✨ Key Features</h3>
+                  <ul>
+                    <li><strong>Anonymous Submission</strong> – Your identity remains completely private</li>
+                    <li><strong>Tracking System</strong> – Monitor your suggestion's status with a unique code</li>
+                    <li><strong>Multiple Categories</strong> – Academic, Administrative, Extracurricular, and more</li>
+                    <li><strong>24/7 Accessibility</strong> – Submit anytime, anywhere via web browser</li>
+                  </ul>
+                </div>
+
+                <div className="about-section">
+                  <h3>👥 Feedback Committee</h3>
+                  <p>Suggestions are reviewed by the SSG Feedback Committee, chaired by Hon. Marco C. Montellano, and forwarded to appropriate campus departments for action.</p>
+                </div>
+
+                <div className="about-section">
+                  <h3>📊 Status Updates</h3>
+                  <ul className="status-list">
+                    <li><span className="status-badge pending">Pending</span> Awaiting review</li>
+                    <li><span className="status-badge review">Under Review</span> Being evaluated</li>
+                    <li><span className="status-badge progress">In Progress</span> Action being taken</li>
+                    <li><span className="status-badge implemented">Implemented</span> Successfully addressed</li>
+                    <li><span className="status-badge declined">Declined</span> Cannot be implemented</li>
+                  </ul>
+                </div>
+
+                <div className="about-section guidelines">
+                  <h3>⚠️ Submission Guidelines</h3>
+                  <ul>
+                    <li>Be respectful and constructive in your feedback</li>
+                    <li>Avoid offensive language or personal attacks</li>
+                    <li>Provide clear and detailed descriptions</li>
+                    <li>One suggestion per submission for better tracking</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="about-modal-footer">
+                <p>Supreme Student Government • CTU Daanbantayan Campus</p>
+                <p className="resolution-note">Resolution No. 031, S. 2025-2026</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
