@@ -76,6 +76,13 @@ const suggestionSchema = new mongoose.Schema({
     },
     notes: String
   }],
+  isRead: {
+    type: Boolean,
+    default: false
+  },
+  readAt: {
+    type: Date
+  },
   isArchived: {
     type: Boolean,
     default: false

@@ -253,6 +253,40 @@ router.put('/suggestions/:id/priority', verifyAdminPassword, async (req, res) =>
   }
 });
 
+// PUT /api/admin/suggestions/:id/read - Mark suggestion as read
+router.put('/suggestions/:id/read', verifyAdminPassword, async (req, res) => {
+  try {
+    const suggestion = await Suggestion.findById(req.params.id);
+    
+    if (!suggestion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Suggestion not found'
+      });
+    }
+
+    // Only update if not already read
+    if (!suggestion.isRead) {
+      suggestion.isRead = true;
+      suggestion.readAt = new Date();
+      await suggestion.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Suggestion marked as read',
+      data: suggestion
+    });
+  } catch (error) {
+    console.error('Error marking as read:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking as read',
+      error: error.message
+    });
+  }
+});
+
 // PUT /api/admin/suggestions/:id/archive - Toggle archive status
 router.put('/suggestions/:id/archive', verifyAdminPassword, async (req, res) => {
   try {
@@ -345,6 +379,9 @@ router.get('/stats', verifyAdminPassword, async (req, res) => {
     // Anonymous vs identified
     const anonymousCount = await Suggestion.countDocuments({ ...activeFilter, isAnonymous: true });
     
+    // Unread count
+    const unreadCount = await Suggestion.countDocuments({ ...activeFilter, isRead: { $ne: true } });
+    
     // Archive and trash counts
     const archivedCount = await Suggestion.countDocuments({ isArchived: true, isDeleted: { $ne: true } });
     const deletedCount = await Suggestion.countDocuments({ isDeleted: true });
@@ -359,6 +396,7 @@ router.get('/stats', verifyAdminPassword, async (req, res) => {
         recentCount,
         anonymousCount,
         identifiedCount: total - anonymousCount,
+        unreadCount,
         archivedCount,
         deletedCount
       }

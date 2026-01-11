@@ -116,35 +116,47 @@ function AdminPanel() {
     const saved = localStorage.getItem('adminDarkMode');
     return saved !== null ? JSON.parse(saved) : true;
   });
-  
-  // Read suggestions tracking
-  const [readSuggestions, setReadSuggestions] = useState(() => {
-    const saved = localStorage.getItem('readSuggestions');
-    return saved ? JSON.parse(saved) : [];
-  });
 
   // Save theme preference
   useEffect(() => {
     localStorage.setItem('adminDarkMode', JSON.stringify(darkMode));
   }, [darkMode]);
   
-  // Save read suggestions
-  useEffect(() => {
-    localStorage.setItem('readSuggestions', JSON.stringify(readSuggestions));
-  }, [readSuggestions]);
+  // Calculate unread count from server data
+  const unreadCount = stats?.unreadCount || 0;
   
-  // Calculate unread count
-  const unreadCount = suggestions.filter(s => !readSuggestions.includes(s._id)).length;
-  
-  // Mark suggestion as read
-  const markAsRead = (suggestionId) => {
-    if (!readSuggestions.includes(suggestionId)) {
-      setReadSuggestions(prev => [...prev, suggestionId]);
+  // Mark suggestion as read (server-side)
+  const markAsRead = async (suggestionId) => {
+    // Find the suggestion and check if already read
+    const suggestion = suggestions.find(s => s._id === suggestionId);
+    if (suggestion?.isRead) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/api/admin/suggestions/${suggestionId}/read`, {
+        method: 'PUT',
+        headers: { 'x-admin-password': password }
+      });
+      
+      if (res.ok) {
+        // Update local state immediately for responsiveness
+        setSuggestions(prev => prev.map(s => 
+          s._id === suggestionId ? { ...s, isRead: true, readAt: new Date().toISOString() } : s
+        ));
+        // Update stats
+        if (stats?.unreadCount > 0) {
+          setStats(prev => ({ ...prev, unreadCount: prev.unreadCount - 1 }));
+        }
+      }
+    } catch (error) {
+      console.error('Error marking as read:', error);
     }
   };
   
   // Check if suggestion is unread
-  const isUnread = (suggestionId) => !readSuggestions.includes(suggestionId);
+  const isUnread = (suggestionId) => {
+    const suggestion = suggestions.find(s => s._id === suggestionId);
+    return suggestion ? !suggestion.isRead : false;
+  };
 
   // Check if already authenticated (session storage)
   useEffect(() => {
