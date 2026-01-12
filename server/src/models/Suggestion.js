@@ -68,6 +68,10 @@ const suggestionSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high', 'urgent'],
     default: 'medium'
   },
+  aiPriorityReason: {
+    type: String,
+    trim: true
+  },
   statusHistory: [{
     status: String,
     changedAt: {

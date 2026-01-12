@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Suggestion from '../models/Suggestion.js';
+import { analyzePriority } from '../services/aiPriorityService.js';
 
 const router = express.Router();
 
@@ -28,11 +29,20 @@ router.post('/', validateSuggestion, async (req, res) => {
       });
     }
 
+    // AI Priority Analysis
+    const { priority, reason } = await analyzePriority(
+      req.body.title,
+      req.body.content,
+      req.body.category
+    );
+
     const suggestionData = {
       category: req.body.category,
       title: req.body.title,
       content: req.body.content,
-      isAnonymous: req.body.isAnonymous
+      isAnonymous: req.body.isAnonymous,
+      priority: priority, // AI-determined priority
+      aiPriorityReason: reason // Store the reason for transparency
     };
 
     // Add submitter info if not anonymous
@@ -59,6 +69,7 @@ router.post('/', validateSuggestion, async (req, res) => {
         category: suggestion.category,
         title: suggestion.title,
         status: suggestion.status,
+        priority: suggestion.priority,
         createdAt: suggestion.createdAt
       }
     });
