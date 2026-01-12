@@ -16,6 +16,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #1a1a2e;
+  overscroll-behavior: none;
 }
 
 body {
@@ -23,8 +25,10 @@ body {
   font-size: $text-base;
   line-height: 1.6;
   color: $color-grey-darker;
-  background-color: $color-grey-light;
+  background-color: #1a1a2e;
   overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 // Typography
