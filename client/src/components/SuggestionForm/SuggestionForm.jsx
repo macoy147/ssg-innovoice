@@ -766,7 +766,7 @@ const SuggestionForm = () => {
               {/* AI Priority Badge */}
               {aiPriority && (
                 <motion.div 
-                  className="ai-priority-badge"
+                  className={`ai-priority-badge ${!aiPriority.analyzed ? 'ai-fallback' : ''}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.55 }}
@@ -774,14 +774,18 @@ const SuggestionForm = () => {
                   <div className="ai-badge-header">
                     <span className="ai-icon">🤖</span>
                     <span className="ai-label">AI Priority Analysis</span>
-                    {aiPriority.analyzed && <span className="ai-verified">✓ Analyzed</span>}
+                    {aiPriority.analyzed ? (
+                      <span className="ai-verified">✓ Analyzed</span>
+                    ) : (
+                      <span className="ai-pending">⏳ Pending Review</span>
+                    )}
                   </div>
                   <div className={`ai-priority-level priority-${aiPriority.priority}`}>
                     {aiPriority.priority.toUpperCase()}
                   </div>
-                  {aiPriority.reason && (
-                    <p className="ai-reason">{aiPriority.reason}</p>
-                  )}
+                  <p className="ai-reason">
+                    {aiPriority.reason || 'Priority assigned based on suggestion content.'}
+                  </p>
                 </motion.div>
               )}
 

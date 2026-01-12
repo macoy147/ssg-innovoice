@@ -164,7 +164,11 @@ Always explain what the suggestion is about and justify the priority level.`;
   console.error(`║ Error: ${(lastError?.message || 'Unknown').substring(0, 45).padEnd(46)}║`);
   console.error('╚═══════════════════════════════════════════════════════╝');
   console.error('');
-  return { priority: 'medium', reason: 'AI analysis error: ' + (lastError?.message || 'Unknown error'), aiAnalyzed: false };
+  return { 
+    priority: 'medium', 
+    reason: 'AI service temporarily unavailable. Default priority assigned - admin will review manually.', 
+    aiAnalyzed: false 
+  };
 }
 
 export default { analyzePriority };
