@@ -883,11 +883,12 @@ const SuggestionForm = () => {
                 <div className="about-section">
                   <h3>📊 Status Updates</h3>
                   <ul className="status-list">
-                    <li><span className="status-badge pending">Pending</span> Awaiting review</li>
-                    <li><span className="status-badge review">Under Review</span> Being evaluated</li>
-                    <li><span className="status-badge progress">In Progress</span> Action being taken</li>
-                    <li><span className="status-badge implemented">Implemented</span> Successfully addressed</li>
-                    <li><span className="status-badge declined">Declined</span> Cannot be implemented</li>
+                    <li><span className="status-badge submitted">Submitted</span> Your suggestion has been received</li>
+                    <li><span className="status-badge review">Under Review</span> Being evaluated by the committee</li>
+                    <li><span className="status-badge forwarded">Forwarded</span> Sent to the appropriate department</li>
+                    <li><span className="status-badge action">Action Taken</span> Steps are being implemented</li>
+                    <li><span className="status-badge resolved">Resolved</span> Successfully addressed</li>
+                    <li><span className="status-badge rejected">Rejected</span> Cannot be implemented</li>
                   </ul>
                 </div>
 

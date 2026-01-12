@@ -2353,27 +2353,32 @@
   min-width: 90px;
   text-align: center;
   
-  &.pending {
+  &.submitted {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+  
+  &.review {
     background: #fef3c7;
     color: #92400e;
   }
   
-  &.review {
+  &.forwarded {
     background: #dbeafe;
     color: #1e40af;
   }
   
-  &.progress {
-    background: #e0e7ff;
-    color: #3730a3;
+  &.action {
+    background: #ede9fe;
+    color: #5b21b6;
   }
   
-  &.implemented {
+  &.resolved {
     background: #d1fae5;
     color: #065f46;
   }
   
-  &.declined {
+  &.rejected {
     background: #fee2e2;
     color: #991b1b;
   }
