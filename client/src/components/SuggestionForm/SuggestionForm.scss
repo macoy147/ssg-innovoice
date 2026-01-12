@@ -2077,15 +2077,19 @@
     
     .tracking-code-display {
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
       gap: $spacing-2;
       
       .tracking-code {
         font-size: $text-base !important;
         word-break: break-all;
+        text-align: center;
       }
       
       .copy-btn {
         width: 100%;
+        justify-content: center;
       }
     }
   }
