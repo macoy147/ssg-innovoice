@@ -57,15 +57,20 @@ export async function analyzePriority(title, content, category) {
       
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-      const prompt = `You are an AI assistant helping categorize student suggestions for a university (CTU Daanbantayan Campus).
+      const prompt = `You are an AI assistant helping categorize student suggestions for a university (CTU Daanbantayan Campus) in Cebu, Philippines.
 
-Your task: Analyze the suggestion and assign a priority level.
+IMPORTANT: Students may write in English, Tagalog, Bisaya/Cebuano, or a mix (Taglish/Bislish). You MUST understand all these languages.
+
+Your task: 
+1. Analyze the suggestion content (in any language)
+2. Assign a priority level
+3. Provide a helpful explanation of what the student is suggesting and why you assigned that priority
 
 PRIORITY LEVELS (choose ONE):
-- "urgent" = Safety issues, harassment, abuse, bullying, health emergencies, security threats, broken critical equipment, discrimination
-- "high" = Affects many students, time-sensitive, major facility problems, academic issues affecting grades, important requests
+- "urgent" = Safety issues (kabutangan/kaligtasan), harassment, abuse, bullying, health emergencies, security threats, broken critical equipment, discrimination, violence
+- "high" = Affects many students, time-sensitive, major facility problems, academic issues affecting grades, important requests that need quick action
 - "medium" = General improvements, moderate impact, quality of life suggestions, standard facility requests
-- "low" = Minor cosmetic changes, nice-to-have features, long-term ideas, simple additions like trash bins or decorations
+- "low" = Minor cosmetic changes, nice-to-have features, long-term ideas, decorations, plants, minor additions
 
 SUGGESTION TO ANALYZE:
 Category: ${category}
@@ -73,9 +78,15 @@ Title: ${title}
 Description: ${content}
 
 RESPOND WITH ONLY THIS JSON FORMAT (no other text):
-{"priority":"low","reason":"one sentence explanation"}
+{"priority":"medium","reason":"A clear 1-2 sentence explanation of what the student is suggesting and why this priority was assigned. Always respond in English."}
 
-Remember: "low" is for minor things like adding trash bins, plants, decorations. "medium" is for moderate improvements. "high" is for important issues. "urgent" is ONLY for safety/emergency situations.`;
+EXAMPLES:
+- "Palihug butangi ug sabon sa CR" (Bisaya for "Please put soap in CR") → medium, hygiene request
+- "Sira ang hagdan" (Bisaya for "The stairs are broken") → urgent if safety hazard
+- "Dagdagan ng electric fan" (Tagalog for "Add more electric fans") → medium, comfort improvement
+- "May nambubully sa akin" (Tagalog for "Someone is bullying me") → urgent, student safety
+
+Always explain what the suggestion is about and justify the priority level.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
