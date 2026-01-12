@@ -44,7 +44,7 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 login attempts per windowMs
+  max: 10, // limit each IP to 10 login attempts per windowMs
   message: { success: false, message: 'Too many login attempts, please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -52,10 +52,12 @@ const authLimiter = rateLimit({
 
 const submissionLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // limit each IP to 10 submissions per hour
+  max: 20, // limit each IP to 20 submissions per hour
   message: { success: false, message: 'Too many submissions, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  // Only apply to POST requests
+  skip: (req) => req.method !== 'POST'
 });
 
 // Apply general rate limiting to all requests
