@@ -1,7 +1,20 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Lazy initialization - will be set on first use
+let genAI = null;
+let initialized = false;
+
+function initializeAI() {
+  if (initialized) return;
+  initialized = true;
+  
+  const apiKey = process.env.GEMINI_API_KEY;
+  console.log(`🤖 AI Service: API Key ${apiKey ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
+  
+  if (apiKey) {
+    genAI = new GoogleGenerativeAI(apiKey);
+  }
+}
 
 /**
  * Analyzes suggestion content and determines priority level
@@ -11,61 +24,85 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * @returns {Promise<{priority: string, reason: string}>}
  */
 export async function analyzePriority(title, content, category) {
+  // Initialize on first call (after dotenv has loaded)
+  initializeAI();
+  
+  console.log('🤖 AI Priority: Function called');
+  console.log(`   Title: ${title}`);
+  console.log(`   Category: ${category}`);
+  console.log(`   Content length: ${content?.length || 0} chars`);
+  
   // If no API key, return default priority
-  if (!process.env.GEMINI_API_KEY) {
-    console.log('No Gemini API key found, using default priority');
+  if (!genAI) {
+    console.log('⚠️ AI Priority: No Gemini API key configured, using default priority');
     return { priority: 'medium', reason: 'Default priority (AI not configured)' };
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    console.log('🤖 AI Priority: Sending to Gemini...');
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
-    const prompt = `You are an AI assistant for a university student suggestion system at CTU Daanbantayan Campus. 
-Analyze the following student suggestion and determine its priority level.
+    const prompt = `You are an AI assistant helping categorize student suggestions for a university (CTU Daanbantayan Campus).
 
-PRIORITY LEVELS:
-- "urgent": Safety issues, security concerns, immediate health risks, critical system failures, harassment/discrimination reports
-- "high": Significant impact on many students, time-sensitive issues, major facility problems, academic concerns affecting grades
-- "medium": General improvements, moderate impact, quality of life enhancements, non-urgent facility requests
-- "low": Minor suggestions, cosmetic changes, nice-to-have features, long-term ideas
+Your task: Analyze the suggestion and assign a priority level.
 
-SUGGESTION DETAILS:
+PRIORITY LEVELS (choose ONE):
+- "urgent" = Safety issues, harassment, abuse, bullying, health emergencies, security threats, broken critical equipment, discrimination
+- "high" = Affects many students, time-sensitive, major facility problems, academic issues affecting grades, important requests
+- "medium" = General improvements, moderate impact, quality of life suggestions, standard facility requests
+- "low" = Minor cosmetic changes, nice-to-have features, long-term ideas, simple additions like trash bins or decorations
+
+SUGGESTION TO ANALYZE:
 Category: ${category}
 Title: ${title}
-Content: ${content}
+Description: ${content}
 
-Respond with ONLY a JSON object in this exact format (no markdown, no code blocks):
-{"priority": "low|medium|high|urgent", "reason": "brief 1-sentence explanation"}`;
+RESPOND WITH ONLY THIS JSON FORMAT (no other text):
+{"priority":"low","reason":"one sentence explanation"}
+
+Remember: "low" is for minor things like adding trash bins, plants, decorations. "medium" is for moderate improvements. "high" is for important issues. "urgent" is ONLY for safety/emergency situations.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text().trim();
     
-    // Parse the JSON response
-    // Remove any markdown code blocks if present
-    const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    console.log('🤖 AI Priority: Raw response:', text);
+    
+    // Parse the JSON response - handle various formats
+    let cleanText = text;
+    // Remove markdown code blocks
+    cleanText = cleanText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+    // Remove any leading/trailing whitespace
+    cleanText = cleanText.trim();
+    
+    console.log('🤖 AI Priority: Cleaned response:', cleanText);
     
     try {
       const parsed = JSON.parse(cleanText);
       
       // Validate priority value
       const validPriorities = ['low', 'medium', 'high', 'urgent'];
-      if (validPriorities.includes(parsed.priority)) {
+      if (parsed.priority && validPriorities.includes(parsed.priority.toLowerCase())) {
+        const finalPriority = parsed.priority.toLowerCase();
+        console.log(`✅ AI Priority: Set to "${finalPriority}" - ${parsed.reason}`);
         return {
-          priority: parsed.priority,
+          priority: finalPriority,
           reason: parsed.reason || 'AI-determined priority'
         };
+      } else {
+        console.log('⚠️ AI Priority: Invalid priority value:', parsed.priority);
       }
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
+      console.error('❌ AI Priority: JSON parse error:', parseError.message);
+      console.error('   Raw text was:', cleanText);
     }
 
     // Default fallback
+    console.log('⚠️ AI Priority: Falling back to medium');
     return { priority: 'medium', reason: 'Could not determine priority' };
 
   } catch (error) {
-    console.error('AI Priority Analysis Error:', error.message);
-    // Return default priority on error - don't block submission
+    console.error('❌ AI Priority Error:', error.message);
     return { priority: 'medium', reason: 'AI analysis unavailable' };
   }
 }

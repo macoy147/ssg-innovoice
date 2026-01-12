@@ -134,13 +134,36 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
               </button>
             </div>
             {error && (
-              <motion.p 
-                className="error-message"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.div 
+                className="error-notification"
+                initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0, 
+                  scale: 1,
+                  transition: {
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 25
+                  }
+                }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
               >
-                {error}
-              </motion.p>
+                <motion.div 
+                  className="error-icon"
+                  animate={{ 
+                    rotate: [0, -10, 10, -10, 10, 0],
+                    scale: [1, 1.2, 1]
+                  }}
+                  transition={{ 
+                    duration: 0.5,
+                    delay: 0.2
+                  }}
+                >
+                  ⚠️
+                </motion.div>
+                <p>{error}</p>
+              </motion.div>
             )}
           </form>
 
