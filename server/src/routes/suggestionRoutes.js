@@ -30,7 +30,9 @@ router.post('/', validateSuggestion, async (req, res) => {
     }
 
     // AI Priority Analysis
-    const { priority, reason } = await analyzePriority(
+    console.log('');
+    console.log('🔄 Processing new suggestion submission...');
+    const { priority, reason, aiAnalyzed } = await analyzePriority(
       req.body.title,
       req.body.content,
       req.body.category
@@ -70,6 +72,8 @@ router.post('/', validateSuggestion, async (req, res) => {
         title: suggestion.title,
         status: suggestion.status,
         priority: suggestion.priority,
+        aiPriorityReason: suggestion.aiPriorityReason,
+        aiAnalyzed: aiAnalyzed,
         createdAt: suggestion.createdAt
       }
     });

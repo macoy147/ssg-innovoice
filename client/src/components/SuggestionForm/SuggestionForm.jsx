@@ -112,6 +112,7 @@ const SuggestionForm = () => {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [trackingCode, setTrackingCode] = useState('');
+  const [aiPriority, setAiPriority] = useState(null);
   const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({});
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -241,6 +242,12 @@ const SuggestionForm = () => {
 
       if (response.data.success) {
         setTrackingCode(response.data.data.trackingCode);
+        // Store AI priority info
+        setAiPriority({
+          priority: response.data.data.priority,
+          reason: response.data.data.aiPriorityReason,
+          analyzed: response.data.data.aiAnalyzed
+        });
         showToast('Suggestion submitted successfully!', 'success');
         setStep(4);
       }
@@ -264,6 +271,7 @@ const SuggestionForm = () => {
     setStep(1);
     setIsAnonymous(true);
     setTrackingCode('');
+    setAiPriority(null);
     setErrors({});
     setFormData({
       category: '',
@@ -754,6 +762,28 @@ const SuggestionForm = () => {
               >
                 Thank you for helping improve CTU Daanbantayan Campus
               </motion.p>
+
+              {/* AI Priority Badge */}
+              {aiPriority && (
+                <motion.div 
+                  className="ai-priority-badge"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  <div className="ai-badge-header">
+                    <span className="ai-icon">🤖</span>
+                    <span className="ai-label">AI Priority Analysis</span>
+                    {aiPriority.analyzed && <span className="ai-verified">✓ Analyzed</span>}
+                  </div>
+                  <div className={`ai-priority-level priority-${aiPriority.priority}`}>
+                    {aiPriority.priority.toUpperCase()}
+                  </div>
+                  {aiPriority.reason && (
+                    <p className="ai-reason">{aiPriority.reason}</p>
+                  )}
+                </motion.div>
+              )}
 
               <motion.div 
                 className="tracking-code-box"
