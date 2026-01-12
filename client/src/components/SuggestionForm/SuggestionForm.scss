@@ -2463,3 +2463,214 @@
     padding: 2px 8px;
   }
 }
+
+
+// ============================================
+// QR SHARE BUTTON & MODAL
+// ============================================
+
+.qr-share-btn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 50%;
+  background: rgba($color-white, 0.1);
+  border: 1px solid rgba($color-white, 0.25);
+  color: rgba($color-white, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+  padding: 0;
+  aspect-ratio: 1 / 1;
+  
+  &:hover {
+    background: rgba($color-white, 0.2);
+    border-color: rgba($color-white, 0.4);
+    color: #fff;
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// QR Modal Overlay
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  padding: $spacing-4;
+}
+
+// QR Modal
+.qr-modal {
+  background: #fff;
+  border-radius: $radius-lg;
+  max-width: 380px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.qr-modal-header {
+  background: linear-gradient(135deg, $primary-red 0%, #c41e3a 100%);
+  color: #fff;
+  padding: $spacing-3 $spacing-4;
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  position: relative;
+  
+  .qr-modal-icon {
+    font-size: 1.5rem;
+  }
+  
+  h2 {
+    font-size: $text-base;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+  }
+  
+  .qr-modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.1);
+    }
+  }
+}
+
+.qr-modal-content {
+  padding: $spacing-4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  .qr-image-wrapper {
+    background: #fff;
+    padding: $spacing-3;
+    border-radius: $radius-md;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 2px solid $color-grey-light;
+  }
+  
+  .qr-image {
+    width: 250px;
+    height: 250px;
+    object-fit: contain;
+    display: block;
+  }
+  
+  .qr-instruction {
+    margin-top: $spacing-3;
+    font-size: $text-sm;
+    color: $color-grey-dark;
+    text-align: center;
+  }
+}
+
+.qr-modal-footer {
+  background: #f8f9fa;
+  padding: $spacing-3 $spacing-4;
+  text-align: center;
+  border-top: 1px solid #eee;
+  
+  p {
+    font-size: $text-xs;
+    color: $color-grey;
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+// Mobile responsive for QR Modal
+@media (max-width: $breakpoint-sm) {
+  .qr-share-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+  
+  .qr-modal-overlay {
+    padding: $spacing-2;
+  }
+  
+  .qr-modal {
+    max-width: 320px;
+  }
+  
+  .qr-modal-header {
+    padding: $spacing-3;
+    
+    .qr-modal-icon {
+      font-size: 1.25rem;
+    }
+    
+    h2 {
+      font-size: $text-sm;
+    }
+    
+    .qr-modal-close {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
+    }
+  }
+  
+  .qr-modal-content {
+    padding: $spacing-3;
+    
+    .qr-image-wrapper {
+      padding: $spacing-2;
+    }
+    
+    .qr-image {
+      width: 200px;
+      height: 200px;
+    }
+    
+    .qr-instruction {
+      font-size: $text-xs;
+    }
+  }
+}

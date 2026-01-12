@@ -116,6 +116,7 @@ const SuggestionForm = () => {
   const [errors, setErrors] = useState({});
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     category: '',
     title: '',
@@ -812,6 +813,18 @@ const SuggestionForm = () => {
               <line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
           </button>
+          <button 
+            className="qr-share-btn"
+            onClick={() => setIsQRModalOpen(true)}
+            aria-label="Share QR Code"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </button>
         </div>
         <p>Supreme Student Government • CTU Daanbantayan Campus</p>
         <p className="policy-link">SSG InnoVoice: Student Suggestion System</p>
@@ -906,6 +919,52 @@ const SuggestionForm = () => {
               <div className="about-modal-footer">
                 <p>Supreme Student Government • CTU Daanbantayan Campus</p>
                 <p className="resolution-note">Resolution No. 031, S. 2025-2026</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* QR Code Share Modal */}
+      <AnimatePresence>
+        {isQRModalOpen && (
+          <motion.div 
+            className="qr-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsQRModalOpen(false)}
+          >
+            <motion.div 
+              className="qr-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="qr-modal-header">
+                <div className="qr-modal-icon">📱</div>
+                <h2>Share SSG InnoVoice</h2>
+                <button 
+                  className="qr-modal-close"
+                  onClick={() => setIsQRModalOpen(false)}
+                  aria-label="Close"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="qr-modal-content">
+                <div className="qr-image-wrapper">
+                  <img src="/SSG nnoVoiceQR.png" alt="SSG InnoVoice QR Code" className="qr-image" />
+                </div>
+                <p className="qr-instruction">Scan this QR code to access SSG InnoVoice</p>
+              </div>
+
+              <div className="qr-modal-footer">
+                <p>Share with fellow students!</p>
               </div>
             </motion.div>
           </motion.div>
