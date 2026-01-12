@@ -13,12 +13,18 @@ const STATUS_OPTIONS = [
 ];
 
 const CATEGORY_OPTIONS = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'academic', label: '📚 Academic' },
-  { value: 'administrative', label: '🏛️ Administrative' },
-  { value: 'extracurricular', label: '🎯 Extracurricular' },
-  { value: 'general', label: '💡 General' }
+  { value: 'all', label: 'All Categories', icon: '📋' },
+  { value: 'academic', label: 'Academic', icon: '📚' },
+  { value: 'administrative', label: 'Administrative', icon: '🏛️' },
+  { value: 'extracurricular', label: 'Extracurricular', icon: '🎭' },
+  { value: 'general', label: 'General', icon: '💡' }
 ];
+
+// Helper to get category info
+const getCategoryInfo = (category) => {
+  const cat = CATEGORY_OPTIONS.find(c => c.value === category);
+  return cat || { label: category, icon: '📋' };
+};
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low', color: '#6b7280' },
@@ -997,7 +1003,10 @@ function AdminPanel() {
                     }}
                   >
                     <span className="select-value">
-                      {CATEGORY_OPTIONS.find(opt => opt.value === filters.category)?.label || 'All Categories'}
+                      {(() => {
+                        const cat = CATEGORY_OPTIONS.find(opt => opt.value === filters.category);
+                        return cat ? `${cat.icon} ${cat.label}` : 'All Categories';
+                      })()}
                     </span>
                     <span className="select-arrow">
                       <svg viewBox="0 0 24 24" width="18" height="18">
@@ -1015,7 +1024,7 @@ function AdminPanel() {
                           setCategoryDropdownOpen(false);
                         }}
                       >
-                        {opt.label}
+                        {opt.icon} {opt.label}
                       </div>
                     ))}
                   </div>
@@ -1302,7 +1311,10 @@ function AdminPanel() {
                           </div>
                           <h4 className="card-title">{suggestion.title}</h4>
                           <div className="card-meta">
-                            <span className="category">{suggestion.category}</span>
+                            <span className="category">
+                              <span className="category-icon">{getCategoryInfo(suggestion.category).icon}</span>
+                              {getCategoryInfo(suggestion.category).label}
+                            </span>
                             <span className="status-badge" style={{ background: statusInfo.color }}>
                               {statusInfo.label}
                             </span>
@@ -1425,7 +1437,9 @@ function AdminPanel() {
                           </div>
                           <div className="info-row">
                             <span className="label">Category:</span>
-                            <span className="value">{selectedSuggestion.category}</span>
+                            <span className="value">
+                              {getCategoryInfo(selectedSuggestion.category).icon} {getCategoryInfo(selectedSuggestion.category).label}
+                            </span>
                           </div>
                           <div className="info-row">
                             <span className="label">Submitted:</span>

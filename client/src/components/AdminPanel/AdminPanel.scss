@@ -1849,6 +1849,13 @@
       font-size: 11px;
       color: #888;
       text-transform: capitalize;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      
+      .category-icon {
+        font-size: 12px;
+      }
     }
   }
   
