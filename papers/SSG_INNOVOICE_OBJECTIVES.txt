@@ -1,0 +1,136 @@
+================================================================================
+                    SSG INNOVOICE: DIGITAL STUDENT SUGGESTION SYSTEM
+                              PROJECT OBJECTIVES
+================================================================================
+
+Based on SSG Resolution No. 031, Series of 2025-2026
+Cebu Technological University – Daanbantayan Campus
+
+================================================================================
+                              GENERAL OBJECTIVE
+================================================================================
+
+To develop and implement a modern, accessible, and efficient web-based feedback 
+system that enables students to share suggestions, feedback, and innovative ideas 
+to improve campus life, academic services, and student welfare at CTU-Daanbantayan 
+Campus.
+
+================================================================================
+                            SPECIFIC OBJECTIVES
+================================================================================
+
+1. ACCESSIBILITY & AVAILABILITY
+   -----------------------------------------------------------------------------
+   • Provide 24/7 online access to the suggestion system via any internet-
+     connected device (smartphones, tablets, computers)
+   • Ensure the web application is responsive and mobile-friendly
+   • Deploy QR codes in strategic campus locations for easy access
+   • Create a user-friendly interface with clear instructions
+
+2. STUDENT FEEDBACK COLLECTION
+   -----------------------------------------------------------------------------
+   • Enable structured submission of feedback through categorized forms:
+     - Academic Services
+     - Administrative Matters
+     - Extracurricular Activities
+     - General Improvements
+   • Allow students to provide detailed descriptions of their suggestions
+   • Support both anonymous and identified submissions to encourage honest feedback
+
+3. PRIVACY & ANONYMITY PROTECTION
+   -----------------------------------------------------------------------------
+   • Ensure anonymity by default to encourage honest and open feedback
+   • Protect student privacy and data in accordance with data protection guidelines
+   • Allow optional contact information for students who wish to receive follow-ups
+
+4. TRACKING & TRANSPARENCY
+   -----------------------------------------------------------------------------
+   • Generate unique tracking codes for each submission
+   • Enable students to monitor the status of their suggestions:
+     - Submitted
+     - Under Review
+     - Forwarded
+     - Action Taken
+     - Resolved
+     - Rejected
+   • Provide transparency in the feedback handling process
+
+5. EFFICIENT ADMINISTRATION
+   -----------------------------------------------------------------------------
+   • Develop a secure admin panel for the Feedback Committee to:
+     - Review and categorize suggestions
+     - Update suggestion statuses
+     - Add notes and context to decisions
+     - Archive resolved suggestions
+     - Filter and search submissions
+   • Enable priority-based sorting for urgent matters
+   • Support AI-powered priority analysis for efficient triage
+
+6. COMMUNICATION & DISSEMINATION
+   -----------------------------------------------------------------------------
+   • Facilitate forwarding of relevant suggestions to appropriate campus departments
+   • Enable status updates to keep students informed
+   • Support the SSG's communication efforts through social media integration
+
+7. EVALUATION & CONTINUOUS IMPROVEMENT
+   -----------------------------------------------------------------------------
+   • Track submission statistics and categories
+   • Support semester-end evaluations of system outcomes
+   • Enable monthly reviews to assess progress and make adjustments
+   • Collect feedback on the system's effectiveness and accessibility
+
+================================================================================
+                              KEY FEATURES
+================================================================================
+
+✓ Suggestion Submission Form with category selection
+✓ Anonymous submission option
+✓ Unique tracking code generation
+✓ Real-time status tracking
+✓ Secure admin panel with authentication
+✓ AI-powered priority analysis (using Google Gemini)
+✓ Multi-language support (English, Tagalog, Bisaya/Cebuano)
+✓ Date range filtering and sorting options
+✓ Archive and restore functionality
+✓ Mobile-responsive design
+✓ PWA (Progressive Web App) support for app-like experience
+✓ QR code sharing for easy access
+
+================================================================================
+                              EXPECTED OUTCOMES
+================================================================================
+
+1. Increased student participation in campus improvement initiatives
+2. Faster identification and resolution of student concerns
+3. Improved communication between students and administration
+4. Data-driven decision making for campus improvements
+5. Enhanced student welfare and campus services
+6. Fostered collaborative community environment
+7. Reduced environmental impact (paperless system)
+
+================================================================================
+                              LEGAL BASIS
+================================================================================
+
+• CTU Student Manual 2015, Article III, Section 3
+• SSG Constitution and By-Laws, Article IV, Section 1
+• SSG Resolution No. 031, Series of 2025-2026
+
+================================================================================
+                              PROJECT TEAM
+================================================================================
+
+Author:         Hon. Marco C. Montellano (SSG Senator)
+Co-Author:      Hon. Leslie Jane Dela Peña (SSG Senator)
+Adviser:        Nikkithea L. Beduya (SSG Adviser)
+
+================================================================================
+                              EFFECTIVITY
+================================================================================
+
+First Semester, Academic Year 2025-2026
+Approved: January 12, 2026
+
+================================================================================
+                    "Speak Ideas. Spark Change."
+================================================================================

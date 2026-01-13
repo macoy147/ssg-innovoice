@@ -51,6 +51,12 @@ const SORT_OPTIONS = [
   { value: 'priority_low', label: 'Priority (Low→High)', icon: '⚪' }
 ];
 
+const IDENTITY_OPTIONS = [
+  { value: 'all', label: 'All Submissions', icon: '👥' },
+  { value: 'anonymous', label: 'Anonymous Only', icon: '🔒' },
+  { value: 'identified', label: 'Identified Only', icon: '👤' }
+];
+
 // Helper to get date range from preset
 const getDateRange = (preset) => {
   const now = new Date();
@@ -102,7 +108,8 @@ function AdminPanel() {
     dateFrom: '',
     dateTo: '',
     sort: 'newest',
-    archived: 'false'
+    archived: 'false',
+    identity: 'all'
   });
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0, limit: 20 });
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -113,6 +120,7 @@ function AdminPanel() {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [identityDropdownOpen, setIdentityDropdownOpen] = useState(false);
   const [dateRangeModalOpen, setDateRangeModalOpen] = useState(false);
   const [tempDateFrom, setTempDateFrom] = useState('');
   const [tempDateTo, setTempDateTo] = useState('');
@@ -211,6 +219,7 @@ function AdminPanel() {
     setStatusDropdownOpen(false);
     setDateDropdownOpen(false);
     setSortDropdownOpen(false);
+    setIdentityDropdownOpen(false);
   };
 
   const handleLogin = async (e) => {
@@ -272,6 +281,7 @@ function AdminPanel() {
         ...(filters.category !== 'all' && { category: filters.category }),
         ...(filters.status !== 'all' && { status: filters.status }),
         ...(filters.search && { search: filters.search }),
+        ...(filters.identity !== 'all' && { identity: filters.identity }),
         ...(dateFrom && { dateFrom }),
         ...(dateTo && { dateTo })
       });
@@ -1216,6 +1226,45 @@ function AdminPanel() {
                     ))}
                   </div>
                 </div>
+
+                {/* Identity Filter Dropdown */}
+                <div className={`custom-select identity-select ${identityDropdownOpen ? 'open' : ''}`}>
+                  <div 
+                    className="select-trigger"
+                    onClick={() => {
+                      const wasOpen = identityDropdownOpen;
+                      closeAllDropdowns();
+                      if (!wasOpen) setIdentityDropdownOpen(true);
+                    }}
+                  >
+                    <span className="select-icon-emoji">
+                      {IDENTITY_OPTIONS.find(opt => opt.value === filters.identity)?.icon || '👥'}
+                    </span>
+                    <span className="select-value">
+                      {IDENTITY_OPTIONS.find(opt => opt.value === filters.identity)?.label || 'All Submissions'}
+                    </span>
+                    <span className="select-arrow">
+                      <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div className="select-options">
+                    {IDENTITY_OPTIONS.map(opt => (
+                      <div 
+                        key={opt.value} 
+                        className={`select-option ${filters.identity === opt.value ? 'selected' : ''}`}
+                        onClick={() => {
+                          setFilters(prev => ({ ...prev, identity: opt.value }));
+                          setIdentityDropdownOpen(false);
+                        }}
+                      >
+                        <span className="identity-icon">{opt.icon}</span>
+                        {opt.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Results Info Bar */}
@@ -1259,7 +1308,7 @@ function AdminPanel() {
                   </div>
                 </div>
                 
-                {(filters.category !== 'all' || filters.status !== 'all' || filters.datePreset !== 'all' || filters.search) && (
+                {(filters.category !== 'all' || filters.status !== 'all' || filters.datePreset !== 'all' || filters.search || filters.identity !== 'all') && (
                   <button 
                     className="clear-filters-btn"
                     onClick={() => setFilters(prev => ({ 
@@ -1270,7 +1319,8 @@ function AdminPanel() {
                       datePreset: 'all',
                       dateFrom: '',
                       dateTo: '',
-                      sort: 'newest'
+                      sort: 'newest',
+                      identity: 'all'
                     }))}
                   >
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">

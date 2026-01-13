@@ -55,7 +55,7 @@ export async function analyzePriority(title, content, category) {
       console.log(`📤 Sending to Google Gemini AI... (Attempt ${attempt}/${maxRetries})`);
       const startTime = Date.now();
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
       const prompt = `You are an AI assistant helping categorize student suggestions for a university (CTU Daanbantayan Campus) in Cebu, Philippines.
 

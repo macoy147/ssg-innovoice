@@ -1101,6 +1101,19 @@
       opacity: 0.8;
     }
   }
+  
+  // Identity select specific styles
+  &.identity-select {
+    .select-icon-emoji {
+      font-size: 14px;
+      margin-right: 6px;
+    }
+    
+    .identity-icon {
+      font-size: 14px;
+      margin-right: 8px;
+    }
+  }
 }
 
 // Custom date inputs inside dropdown

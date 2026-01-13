@@ -1,0 +1,242 @@
+================================================================================
+                    SSG INNOVOICE: DIGITAL STUDENT SUGGESTION SYSTEM
+                              STUDENT USER GUIDE
+================================================================================
+
+                         "Speak Ideas. Spark Change."
+                  Cebu Technological University – Daanbantayan Campus
+
+================================================================================
+                         HOW TO ACCESS SSG INNOVOICE
+================================================================================
+
+OPTION 1: SCAN THE QR CODE
+--------------------------
+1. Open your phone's camera app or any QR code scanner
+2. Point your camera at the SSG InnoVoice QR code posted on campus
+   (Located at: Library, Student Lounge, Admin Building, Bulletin Boards)
+3. Tap the link that appears on your screen
+4. The SSG InnoVoice website will open in your browser
+
+OPTION 2: TYPE THE WEBSITE LINK
+-------------------------------
+1. Open any web browser (Chrome, Safari, Firefox, etc.)
+2. Type in the address bar: https://ssginnovoice.filipino.gg
+   (Alternative: https://ssginnovoice.vercel.app)
+3. Press Enter or Go
+4. The SSG InnoVoice homepage will load
+
+OPTION 3: INSTALL AS AN APP (Recommended)
+-----------------------------------------
+1. Visit the SSG InnoVoice website using the steps above
+2. When prompted, tap "Install" or "Add to Home Screen"
+3. The app icon will appear on your phone's home screen
+4. Open the app anytime without needing to type the link again
+
+================================================================================
+                      HOW TO SUBMIT A SUGGESTION
+================================================================================
+
+STEP 1: SELECT A CATEGORY
+-------------------------
+When you open SSG InnoVoice, you'll see four category options:
+
+   📚 ACADEMIC SERVICES
+      - Curriculum concerns
+      - Teaching methods
+      - Learning resources
+      - Classroom facilities
+
+   🏛️ ADMINISTRATIVE MATTERS
+      - Policies and procedures
+      - Enrollment issues
+      - Records and documents
+      - Campus facilities
+
+   🎭 EXTRACURRICULAR ACTIVITIES
+      - Events and programs
+      - Student organizations
+      - Sports and clubs
+      - Campus activities
+
+   💡 GENERAL IMPROVEMENTS
+      - Overall campus life
+      - Student welfare
+      - Safety concerns
+      - Other suggestions
+
+→ Tap on the category that best fits your suggestion
+→ Click "Continue" to proceed
+
+--------------------------------------------------------------------------------
+
+STEP 2: PROVIDE DETAILS
+-----------------------
+Fill in the following information:
+
+   SUGGESTION TITLE (Required)
+   • Write a clear, brief title for your suggestion
+   • Example: "Add more electric fans in Room 201"
+   • Minimum 5 characters
+
+   DETAILED DESCRIPTION (Required)
+   • Explain your suggestion in detail
+   • What is the issue or opportunity?
+   • How would your suggestion help?
+   • Who would benefit from this change?
+   • Minimum 20 characters
+   • You can write in English, Tagalog, or Bisaya
+
+→ Click "Continue" when done
+
+--------------------------------------------------------------------------------
+
+STEP 3: CHOOSE SUBMISSION TYPE
+------------------------------
+You have two options:
+
+   🔒 ANONYMOUS (Default)
+      - Your identity remains completely private
+      - No personal information is collected
+      - You can still track your suggestion using the tracking code
+
+   👤 INCLUDE MY DETAILS (Optional)
+      - Provide your contact information for follow-ups
+      - All fields are optional:
+        • Full Name
+        • Student ID
+        • Email Address
+        • Contact Number
+        • Course/Program
+        • Year Level
+      - Check the box if you want email updates
+
+→ Review your submission summary
+→ Click "Submit Suggestion" to send
+
+--------------------------------------------------------------------------------
+
+STEP 4: SAVE YOUR TRACKING CODE
+-------------------------------
+After successful submission, you will see:
+
+   ✓ "Suggestion Submitted!"
+   
+   🤖 AI PRIORITY ANALYSIS
+      - Shows the priority level assigned by AI
+      - LOW / MEDIUM / HIGH / URGENT
+      - Includes explanation of why this priority was assigned
+
+   YOUR TRACKING CODE
+   ┌─────────────────────────────┐
+   │  VISI-XXXXXXXX-XXXX        │  ← Your unique code
+   └─────────────────────────────┘
+   
+   📋 Click "Copy" to copy the code to your clipboard
+
+⚠️ IMPORTANT: Save this tracking code! You will need it to check your 
+   suggestion's status. Screenshot it or write it down.
+
+→ Click "Submit Another Suggestion" if you have more feedback
+
+================================================================================
+                      HOW TO TRACK YOUR SUGGESTION
+================================================================================
+
+STEP 1: OPEN THE TRACKING FEATURE
+---------------------------------
+1. Go to SSG InnoVoice website
+2. At the bottom of the page, click "🔍 Track My Suggestion"
+3. A tracking window will appear
+
+STEP 2: ENTER YOUR TRACKING CODE
+--------------------------------
+1. Type or paste your tracking code in the input field
+   Example: VISI-MKB570EN-2J7R
+2. Click "Track" or press Enter
+
+STEP 3: VIEW YOUR SUGGESTION STATUS
+------------------------------------
+You will see the following information:
+
+   TRACKING CODE: VISI-XXXXXXXX-XXXX
+   
+   STATUS: [Current Status]
+   ─────────────────────────
+   
+   📊 STATUS MEANINGS:
+   
+   ⚪ SUBMITTED
+      Your suggestion has been received and is waiting for review
+   
+   🟡 UNDER REVIEW
+      The Feedback Committee is currently evaluating your suggestion
+   
+   🔵 FORWARDED
+      Your suggestion has been sent to the appropriate department
+   
+   🟣 ACTION TAKEN
+      Steps are being implemented to address your suggestion
+   
+   🟢 RESOLVED
+      Your suggestion has been successfully addressed
+   
+   🔴 REJECTED
+      Your suggestion cannot be implemented (reason may be provided)
+
+   ADDITIONAL INFORMATION SHOWN:
+   • Category
+   • Title
+   • Submission Date
+   • Priority Level
+   • Status History (if available)
+   • Admin Notes (if any)
+
+================================================================================
+                         ADDITIONAL FEATURES
+================================================================================
+
+ℹ️ ABOUT THIS SYSTEM
+--------------------
+• Click the info icon (ℹ️) next to "Track My Suggestion"
+• View policy highlights and guidelines
+• See all status explanations
+• Learn about the Feedback Committee
+
+📱 SHARE QR CODE
+----------------
+• Click the QR icon next to the info button
+• A QR code will appear
+• Show it to friends so they can access SSG InnoVoice easily
+
+================================================================================
+                         SUBMISSION GUIDELINES
+================================================================================
+
+✅ DO:
+• Be respectful and constructive in your feedback
+• Provide clear and detailed descriptions
+• Submit one suggestion per submission for better tracking
+• Use any language you're comfortable with (English, Tagalog, Bisaya)
+
+❌ DON'T:
+• Use offensive language or personal attacks
+• Submit discriminatory or inappropriate content
+• Spam multiple identical submissions
+• Provide false information
+
+⚠️ Violations may result in your submission being rejected.
+
+================================================================================
+                         NEED HELP?
+================================================================================
+
+If you encounter any issues:
+• Contact the SSG Office
+• Message the official SSG Facebook page
+• Approach any SSG Officer on campus
+
+================================================================================
+                    Supreme Student Government
+              CTU Daanbantayan Campus | A.Y. 2025-2026
+================================================================================

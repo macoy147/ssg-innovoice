@@ -30,7 +30,7 @@ router.post('/verify', (req, res) => {
 // GET /api/admin/suggestions - Get all suggestions with full details
 router.get('/suggestions', verifyAdminPassword, async (req, res) => {
   try {
-    const { category, status, search, page = 1, limit = 20, dateFrom, dateTo, sort = 'newest', archived } = req.query;
+    const { category, status, search, page = 1, limit = 20, dateFrom, dateTo, sort = 'newest', archived, identity } = req.query;
     
     const query = { isDeleted: { $ne: true } };
     
@@ -46,6 +46,14 @@ router.get('/suggestions', verifyAdminPassword, async (req, res) => {
     
     if (category && category !== 'all') query.category = category;
     if (status && status !== 'all') query.status = status;
+    
+    // Identity filter (anonymous vs identified)
+    if (identity === 'anonymous') {
+      query.isAnonymous = true;
+    } else if (identity === 'identified') {
+      query.isAnonymous = false;
+    }
+    
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
