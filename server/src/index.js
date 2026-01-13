@@ -16,6 +16,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy - required for Render/Heroku/etc behind reverse proxy
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 connectDB();
 
