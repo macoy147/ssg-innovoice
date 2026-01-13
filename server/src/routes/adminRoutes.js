@@ -75,6 +75,9 @@ router.get('/suggestions', verifyAdminPassword, async (req, res) => {
       case 'oldest':
         sortOption = { createdAt: 1 };
         break;
+      case 'recently_updated':
+        sortOption = { updatedAt: -1 };
+        break;
       case 'priority_high':
         // Custom sort: urgent > high > medium > low
         sortOption = { 

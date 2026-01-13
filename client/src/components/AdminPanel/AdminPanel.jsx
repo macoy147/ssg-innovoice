@@ -47,6 +47,7 @@ const DATE_PRESETS = [
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First', icon: '↓' },
   { value: 'oldest', label: 'Oldest First', icon: '↑' },
+  { value: 'recently_updated', label: 'Recently Updated', icon: '🔄' },
   { value: 'priority_high', label: 'Priority (High→Low)', icon: '🔴' },
   { value: 'priority_low', label: 'Priority (Low→High)', icon: '⚪' }
 ];
@@ -126,6 +127,18 @@ function AdminPanel() {
   const [tempDateTo, setTempDateTo] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [bulkSelectMode, setBulkSelectMode] = useState(false);
+  
+  // Cascading filter state
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState(null);
+  
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('adminDarkMode');
     return saved !== null ? JSON.parse(saved) : true;
@@ -220,6 +233,17 @@ function AdminPanel() {
     setDateDropdownOpen(false);
     setSortDropdownOpen(false);
     setIdentityDropdownOpen(false);
+    setFilterDropdownOpen(false);
+    setHoveredCategory(null);
+  };
+
+  // Toggle bulk select mode
+  const toggleBulkSelectMode = () => {
+    if (bulkSelectMode) {
+      // Exiting bulk mode - clear selections
+      setSelectedIds([]);
+    }
+    setBulkSelectMode(!bulkSelectMode);
   };
 
   const handleLogin = async (e) => {
@@ -383,11 +407,72 @@ function AdminPanel() {
         setSelectedSuggestion(null);
         setDeleteModalOpen(false);
         setPendingDelete(null);
-        fetchSuggestions();
+        
+        // If this was the last item on the current page and we're not on page 1,
+        // go back to the previous page
+        if (suggestions.length === 1 && pagination.page > 1) {
+          setPagination(prev => ({ ...prev, page: prev.page - 1 }));
+        } else {
+          fetchSuggestions();
+        }
         fetchStats();
       }
     } catch (error) {
       showNotification('Error deleting suggestion', 'error');
+    }
+  };
+
+  // Bulk selection functions
+  const toggleSelectItem = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === suggestions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(suggestions.map(s => s._id));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const bulkDeleteSuggestions = async () => {
+    if (selectedIds.length === 0) return;
+    
+    try {
+      // Delete all selected items
+      const deletePromises = selectedIds.map(id => 
+        fetch(`${API_URL}/api/admin/suggestions/${id}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-password': password }
+        })
+      );
+      
+      await Promise.all(deletePromises);
+      
+      showNotification(`${selectedIds.length} suggestion${selectedIds.length > 1 ? 's' : ''} deleted`);
+      setBulkDeleteModalOpen(false);
+      setSelectedIds([]);
+      setSelectedSuggestion(null);
+      setBulkSelectMode(false);
+      
+      // Handle pagination after bulk delete
+      const remainingItems = suggestions.length - selectedIds.length;
+      if (remainingItems === 0 && pagination.page > 1) {
+        setPagination(prev => ({ ...prev, page: 1 }));
+      } else {
+        fetchSuggestions();
+      }
+      fetchStats();
+    } catch (error) {
+      showNotification('Error deleting suggestions', 'error');
     }
   };
 
@@ -756,6 +841,101 @@ function AdminPanel() {
           </>
         )}
 
+        {/* Photo Evidence Modal */}
+        {photoModalOpen && selectedSuggestion?.imageUrl && (
+          <>
+            <div className="photo-modal-overlay" onClick={() => setPhotoModalOpen(false)} />
+            <div className="photo-modal">
+              <div className="photo-modal-header">
+                <h3>📷 Photo Evidence</h3>
+                <button 
+                  className="photo-modal-close"
+                  onClick={() => setPhotoModalOpen(false)}
+                  aria-label="Close"
+                >
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+              <div className="photo-modal-body">
+                <img 
+                  src={selectedSuggestion.imageUrl} 
+                  alt="Suggestion evidence" 
+                />
+              </div>
+              <div className="photo-modal-footer">
+                <button 
+                  className="open-new-tab-btn"
+                  onClick={() => window.open(selectedSuggestion.imageUrl, '_blank')}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                  </svg>
+                  Open in New Tab
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Bulk Delete Confirmation Modal */}
+        {bulkDeleteModalOpen && selectedIds.length > 0 && (
+          <>
+            <div className="delete-modal-overlay" onClick={() => setBulkDeleteModalOpen(false)} />
+            <div className="delete-confirm-modal bulk-delete-modal">
+              <div className="delete-modal-icon">
+                <div className="icon-circle bulk">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <div className="delete-modal-content">
+                <h3>Delete {selectedIds.length} Suggestion{selectedIds.length > 1 ? 's' : ''}?</h3>
+                <p>This action cannot be undone. The selected suggestions will be permanently removed.</p>
+                
+                <div className="bulk-delete-preview">
+                  <div className="bulk-count-badge">
+                    <span className="count">{selectedIds.length}</span>
+                    <span className="label">items selected</span>
+                  </div>
+                  <div className="bulk-items-list">
+                    {suggestions
+                      .filter(s => selectedIds.includes(s._id))
+                      .slice(0, 3)
+                      .map(s => (
+                        <div key={s._id} className="bulk-item-preview">
+                          <span className="tracking">{s.trackingCode}</span>
+                          <span className="title">{s.title.substring(0, 30)}{s.title.length > 30 ? '...' : ''}</span>
+                        </div>
+                      ))
+                    }
+                    {selectedIds.length > 3 && (
+                      <div className="bulk-more">
+                        +{selectedIds.length - 3} more items
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="delete-modal-actions">
+                <button className="cancel-btn" onClick={() => setBulkDeleteModalOpen(false)}>
+                  Cancel
+                </button>
+                <button className="confirm-delete-btn" onClick={bulkDeleteSuggestions}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Delete {selectedIds.length} Item{selectedIds.length > 1 ? 's' : ''}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Mobile Header */}
         <div className="mobile-header">
           <button className="menu-toggle" onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}>
@@ -989,99 +1169,152 @@ function AdminPanel() {
 
               {/* Filters */}
               <div className="filters-bar">
-                <div className="search-input-wrapper">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" className="search-icon">
-                    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                  </svg>
+                <div className={`search-input-wrapper ${searchExpanded ? 'expanded' : ''}`}>
+                  <button 
+                    className="search-toggle"
+                    onClick={() => setSearchExpanded(!searchExpanded)}
+                    aria-label="Toggle search"
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                  </button>
                   <input
                     type="text"
                     placeholder="Search suggestions..."
                     value={filters.search}
                     onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                     onKeyDown={(e) => e.key === 'Enter' && fetchSuggestions()}
+                    onFocus={() => setSearchExpanded(true)}
+                    onBlur={(e) => {
+                      if (!e.target.value) setSearchExpanded(false);
+                    }}
                   />
-                </div>
-                
-                {/* Custom Category Dropdown */}
-                <div className={`custom-select ${categoryDropdownOpen ? 'open' : ''}`}>
-                  <div 
-                    className="select-trigger"
-                    onClick={() => {
-                      const wasOpen = categoryDropdownOpen;
-                      closeAllDropdowns();
-                      if (!wasOpen) setCategoryDropdownOpen(true);
-                    }}
-                  >
-                    <span className="select-value">
-                      {(() => {
-                        const cat = CATEGORY_OPTIONS.find(opt => opt.value === filters.category);
-                        return cat ? `${cat.icon} ${cat.label}` : 'All Categories';
-                      })()}
-                    </span>
-                    <span className="select-arrow">
-                      <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor" d="M7 10l5 5 5-5z"/>
-                      </svg>
-                    </span>
-                  </div>
-                  <div className="select-options">
-                    {CATEGORY_OPTIONS.map(opt => (
-                      <div 
-                        key={opt.value} 
-                        className={`select-option ${filters.category === opt.value ? 'selected' : ''}`}
-                        onClick={() => {
-                          setFilters(prev => ({ ...prev, category: opt.value }));
-                          setCategoryDropdownOpen(false);
-                        }}
-                      >
-                        {opt.icon} {opt.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Custom Status Dropdown */}
-                <div className={`custom-select ${statusDropdownOpen ? 'open' : ''}`}>
-                  <div 
-                    className="select-trigger"
-                    onClick={() => {
-                      const wasOpen = statusDropdownOpen;
-                      closeAllDropdowns();
-                      if (!wasOpen) setStatusDropdownOpen(true);
-                    }}
-                  >
-                    <span className="select-value">
-                      {filters.status === 'all' ? 'All Status' : STATUS_OPTIONS.find(opt => opt.value === filters.status)?.label}
-                    </span>
-                    <span className="select-arrow">
-                      <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor" d="M7 10l5 5 5-5z"/>
-                      </svg>
-                    </span>
-                  </div>
-                  <div className="select-options">
-                    <div 
-                      className={`select-option ${filters.status === 'all' ? 'selected' : ''}`}
+                  {searchExpanded && filters.search && (
+                    <button 
+                      className="search-clear"
                       onClick={() => {
-                        setFilters(prev => ({ ...prev, status: 'all' }));
-                        setStatusDropdownOpen(false);
+                        setFilters(prev => ({ ...prev, search: '' }));
+                        setSearchExpanded(false);
                       }}
+                      aria-label="Clear search"
                     >
-                      All Status
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Cascading Category + Status Filter */}
+                {filterDropdownOpen && (
+                  <div className="filter-overlay" onClick={() => setFilterDropdownOpen(false)} />
+                )}
+                <div 
+                  className={`cascading-filter ${filterDropdownOpen ? 'open' : ''}`}
+                  onMouseLeave={() => setHoveredCategory(null)}
+                >
+                  <div 
+                    className="filter-trigger"
+                    onClick={() => {
+                      const wasOpen = filterDropdownOpen;
+                      closeAllDropdowns();
+                      if (!wasOpen) setFilterDropdownOpen(true);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="filter-icon">
+                      <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                    </svg>
+                    <span className="filter-value">
+                      {filters.category === 'all' && filters.status === 'all' 
+                        ? 'All Filters'
+                        : `${filters.category !== 'all' ? getCategoryInfo(filters.category).label : 'All'}${filters.status !== 'all' ? ` • ${getStatusInfo(filters.status).label}` : ''}`
+                      }
+                    </span>
+                    {(filters.category !== 'all' || filters.status !== 'all') && (
+                      <span className="active-filter-badge">
+                        {(filters.category !== 'all' ? 1 : 0) + (filters.status !== 'all' ? 1 : 0)}
+                      </span>
+                    )}
+                    <span className="filter-arrow">
+                      <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+                      </svg>
+                    </span>
+                  </div>
+                  
+                  <div className="filter-dropdown">
+                    <div className="filter-categories">
+                      <div className="filter-section-title">Category</div>
+                      {CATEGORY_OPTIONS.map(cat => (
+                        <div 
+                          key={cat.value}
+                          className={`filter-category-item ${filters.category === cat.value ? 'selected' : ''} ${hoveredCategory === cat.value ? 'hovered' : ''}`}
+                          onMouseEnter={() => setHoveredCategory(cat.value)}
+                          onClick={() => {
+                            if (cat.value === 'all') {
+                              setFilters(prev => ({ ...prev, category: 'all', status: 'all' }));
+                              setFilterDropdownOpen(false);
+                            }
+                          }}
+                        >
+                          <span className="category-icon">{cat.icon}</span>
+                          <span className="category-label">{cat.label}</span>
+                          {cat.value !== 'all' && (
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="arrow-icon">
+                              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                            </svg>
+                          )}
+                          {filters.category === cat.value && filters.status === 'all' && (
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="check-icon">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    {STATUS_OPTIONS.map(opt => (
-                      <div 
-                        key={opt.value} 
-                        className={`select-option ${filters.status === opt.value ? 'selected' : ''}`}
-                        onClick={() => {
-                          setFilters(prev => ({ ...prev, status: opt.value }));
-                          setStatusDropdownOpen(false);
-                        }}
-                      >
-                        <span className="status-dot" style={{ background: opt.color }}></span>
-                        {opt.label}
+                    
+                    {/* Status Sub-menu */}
+                    {hoveredCategory && hoveredCategory !== 'all' && (
+                      <div className="filter-statuses">
+                        <div className="filter-section-title">
+                          {getCategoryInfo(hoveredCategory).icon} {getCategoryInfo(hoveredCategory).label} Status
+                        </div>
+                        <div 
+                          className={`filter-status-item ${filters.category === hoveredCategory && filters.status === 'all' ? 'selected' : ''}`}
+                          onClick={() => {
+                            setFilters(prev => ({ ...prev, category: hoveredCategory, status: 'all' }));
+                            setFilterDropdownOpen(false);
+                          }}
+                        >
+                          <span className="status-dot all"></span>
+                          <span>All Status</span>
+                          {filters.category === hoveredCategory && filters.status === 'all' && (
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="check-icon">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                          )}
+                        </div>
+                        {STATUS_OPTIONS.map(status => (
+                          <div 
+                            key={status.value}
+                            className={`filter-status-item ${filters.category === hoveredCategory && filters.status === status.value ? 'selected' : ''}`}
+                            onClick={() => {
+                              setFilters(prev => ({ ...prev, category: hoveredCategory, status: status.value }));
+                              setFilterDropdownOpen(false);
+                            }}
+                          >
+                            <span className="status-dot" style={{ background: status.color }}></span>
+                            <span>{status.label}</span>
+                            {filters.category === hoveredCategory && filters.status === status.value && (
+                              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="check-icon">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                              </svg>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
 
@@ -1270,6 +1503,54 @@ function AdminPanel() {
               {/* Results Info Bar */}
               <div className="results-info-bar">
                 <div className="results-left">
+                  {/* Select Multiple Toggle Button */}
+                  {suggestions.length > 0 && (
+                    <button 
+                      className={`select-multiple-btn ${bulkSelectMode ? 'active' : ''}`}
+                      onClick={toggleBulkSelectMode}
+                    >
+                      {bulkSelectMode ? (
+                        <>
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                          </svg>
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/>
+                          </svg>
+                          Select
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
+                  {/* Select All - Only show when in bulk select mode */}
+                  {bulkSelectMode && suggestions.length > 0 && (
+                    <button 
+                      className="select-all-btn"
+                      onClick={toggleSelectAll}
+                    >
+                      {selectedIds.length === suggestions.length ? (
+                        <>
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                          </svg>
+                          Deselect All
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                          </svg>
+                          Select All
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
                   <span className="results-count">
                     {pagination.total > 0 ? (
                       pagination.pages === 1 ? (
@@ -1331,6 +1612,33 @@ function AdminPanel() {
                 )}
               </div>
 
+              {/* Floating Bulk Action Bar */}
+              {selectedIds.length > 0 && bulkSelectMode && (
+                <div className="bulk-action-bar">
+                  <div className="bulk-info">
+                    <span className="bulk-count">{selectedIds.length}</span>
+                    <span className="bulk-text">selected</span>
+                  </div>
+                  <div className="bulk-actions">
+                    <button className="bulk-btn clear-btn" onClick={() => {
+                      clearSelection();
+                      setBulkSelectMode(false);
+                    }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                      </svg>
+                      Cancel
+                    </button>
+                    <button className="bulk-btn delete-btn" onClick={() => setBulkDeleteModalOpen(true)}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                      </svg>
+                      Delete {selectedIds.length}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="suggestions-layout">
                 {/* Suggestions List */}
                 <div className="suggestions-list">
@@ -1343,15 +1651,38 @@ function AdminPanel() {
                       const statusInfo = getStatusInfo(suggestion.status);
                       const priorityInfo = getPriorityInfo(suggestion.priority);
                       const unread = isUnread(suggestion._id);
+                      const isChecked = selectedIds.includes(suggestion._id);
                       return (
                         <div
                           key={suggestion._id}
-                          className={`suggestion-card ${selectedSuggestion?._id === suggestion._id ? 'selected' : ''} ${unread ? 'unread' : ''}`}
+                          className={`suggestion-card ${selectedSuggestion?._id === suggestion._id ? 'selected' : ''} ${unread ? 'unread' : ''} ${isChecked ? 'bulk-selected' : ''} ${bulkSelectMode ? 'bulk-mode' : ''}`}
                           onClick={() => {
-                            setSelectedSuggestion(suggestion);
-                            markAsRead(suggestion._id);
+                            if (bulkSelectMode) {
+                              toggleSelectItem(suggestion._id);
+                            } else {
+                              setSelectedSuggestion(suggestion);
+                              markAsRead(suggestion._id);
+                            }
                           }}
                         >
+                          {/* Bulk Select Checkbox - Only show in bulk select mode */}
+                          {bulkSelectMode && (
+                            <label 
+                              className="bulk-checkbox"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleSelectItem(suggestion._id)}
+                              />
+                              <span className="checkbox-custom">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                              </span>
+                            </label>
+                          )}
                           {unread && <span className="unread-dot" />}
                           <div className="card-header">
                             <span className="tracking-code">{suggestion.trackingCode}</span>
@@ -1449,152 +1780,250 @@ function AdminPanel() {
                       </div>
                       
                       <div className="detail-scroll-content">
-                        <div className="detail-header">
-                          <h3>{selectedSuggestion.title}</h3>
-                          <div className="detail-actions">
-                            <button 
-                              className={`archive-btn ${selectedSuggestion.isArchived ? 'archived' : ''}`}
-                              onClick={() => archiveSuggestion(selectedSuggestion._id)}
+                        {/* Hero Card - Title, Priority & Status */}
+                        <div className="detail-hero-card">
+                          <div className="hero-top">
+                            <span className={`priority-badge priority-${selectedSuggestion.priority}`}>
+                              {selectedSuggestion.priority === 'urgent' && '🔴'}
+                              {selectedSuggestion.priority === 'high' && '🟠'}
+                              {selectedSuggestion.priority === 'medium' && '🟡'}
+                              {selectedSuggestion.priority === 'low' && '🟢'}
+                              {selectedSuggestion.priority?.toUpperCase()}
+                            </span>
+                            <span 
+                              className="status-badge-hero"
+                              style={{ background: getStatusInfo(selectedSuggestion.status).color }}
                             >
-                              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                                {selectedSuggestion.isArchived ? (
-                                  <path d="M20.55 5.22l-1.39-1.68A1.51 1.51 0 0018 3H6c-.47 0-.88.21-1.15.55L3.46 5.22C3.17 5.57 3 6.01 3 6.5V19a2 2 0 002 2h14a2 2 0 002-2V6.5c0-.49-.17-.93-.45-1.28zM12 9.5l5.5 5.5H14v2h-4v-2H6.5L12 9.5zM5.12 5l.82-1h12l.93 1H5.12z"/>
-                                ) : (
-                                  <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/>
-                                )}
-                              </svg>
-                              {selectedSuggestion.isArchived ? 'Unarchive' : 'Archive'}
-                            </button>
-                            <button 
-                              className="delete-btn" 
-                              onClick={() => {
-                                setPendingDelete(selectedSuggestion);
-                                setDeleteModalOpen(true);
-                              }}
-                            >
-                              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                              </svg>
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="detail-info">
-                          <div className="info-row">
-                            <span className="label">Tracking Code:</span>
-                            <span className="value code">{selectedSuggestion.trackingCode}</span>
-                          </div>
-                          <div className="info-row">
-                            <span className="label">Category:</span>
-                            <span className="value">
-                              {getCategoryInfo(selectedSuggestion.category).icon} {getCategoryInfo(selectedSuggestion.category).label}
+                              {getStatusInfo(selectedSuggestion.status).label}
                             </span>
                           </div>
-                          <div className="info-row">
-                            <span className="label">Submitted:</span>
-                            <span className="value">{formatDate(selectedSuggestion.createdAt)}</span>
+                          <h2 className="hero-title">{selectedSuggestion.title}</h2>
+                          <div className="hero-meta">
+                            <span className="meta-item">
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                              </svg>
+                              {selectedSuggestion.trackingCode}
+                            </span>
+                            <span className="meta-item">
+                              {getCategoryInfo(selectedSuggestion.category).icon} {getCategoryInfo(selectedSuggestion.category).label}
+                            </span>
+                            <span className="meta-item">
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                              </svg>
+                              {formatDate(selectedSuggestion.createdAt)}
+                            </span>
                           </div>
-                    </div>
+                        </div>
 
-                    <div className="detail-section">
-                      <h4>Content</h4>
-                      <p className="content-text">{selectedSuggestion.content}</p>
-                    </div>
-
-                    {/* Photo Attachment Display */}
-                    {selectedSuggestion.imageUrl && (
-                      <div className="detail-section photo-section">
-                        <h4>📷 Attached Photo</h4>
-                        <div className="photo-display">
-                          <img 
-                            src={selectedSuggestion.imageUrl} 
-                            alt="Suggestion attachment" 
-                            onClick={() => window.open(selectedSuggestion.imageUrl, '_blank')}
-                          />
+                        {/* Quick Actions Bar */}
+                        <div className="quick-actions-bar">
                           <button 
-                            className="view-full-btn"
-                            onClick={() => window.open(selectedSuggestion.imageUrl, '_blank')}
+                            className={`quick-action-btn ${selectedSuggestion.isArchived ? 'archived' : ''}`}
+                            onClick={() => archiveSuggestion(selectedSuggestion._id)}
                           >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                              <path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                              {selectedSuggestion.isArchived ? (
+                                <path d="M20.55 5.22l-1.39-1.68A1.51 1.51 0 0018 3H6c-.47 0-.88.21-1.15.55L3.46 5.22C3.17 5.57 3 6.01 3 6.5V19a2 2 0 002 2h14a2 2 0 002-2V6.5c0-.49-.17-.93-.45-1.28zM12 9.5l5.5 5.5H14v2h-4v-2H6.5L12 9.5zM5.12 5l.82-1h12l.93 1H5.12z"/>
+                              ) : (
+                                <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/>
+                              )}
                             </svg>
-                            View Full Size
+                            {selectedSuggestion.isArchived ? 'Unarchive' : 'Archive'}
                           </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {!selectedSuggestion.isAnonymous && selectedSuggestion.submitter && (
-                      <div className="detail-section">
-                        <h4>Submitter Info</h4>
-                        <div className="submitter-info">
-                          {selectedSuggestion.submitter.name && <p><strong>Name:</strong> {selectedSuggestion.submitter.name}</p>}
-                          {selectedSuggestion.submitter.studentId && <p><strong>Student ID:</strong> {selectedSuggestion.submitter.studentId}</p>}
-                          {selectedSuggestion.submitter.email && <p><strong>Email:</strong> {selectedSuggestion.submitter.email}</p>}
-                          {selectedSuggestion.submitter.course && <p><strong>Course:</strong> {selectedSuggestion.submitter.course}</p>}
-                          {selectedSuggestion.submitter.yearLevel && <p><strong>Year:</strong> {selectedSuggestion.submitter.yearLevel}</p>}
-                          {selectedSuggestion.submitter.contactNumber && <p><strong>Contact:</strong> {selectedSuggestion.submitter.contactNumber}</p>}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="detail-section">
-                      <h4>Update Status</h4>
-                      <div className="status-actions">
-                        {STATUS_OPTIONS.map(opt => (
-                          <button
-                            key={opt.value}
-                            className={`status-btn ${selectedSuggestion.status === opt.value ? 'active' : ''}`}
-                            style={{ '--btn-color': opt.color }}
+                          {selectedSuggestion.imageUrl && (
+                            <button 
+                              className="quick-action-btn photo-btn"
+                              onClick={() => setPhotoModalOpen(true)}
+                            >
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                              </svg>
+                              View Evidence
+                            </button>
+                          )}
+                          <button 
+                            className="quick-action-btn delete-btn"
                             onClick={() => {
-                              setPendingStatus(opt);
-                              setStatusNote('');
-                              setStatusModalOpen(true);
+                              setPendingDelete(selectedSuggestion);
+                              setDeleteModalOpen(true);
                             }}
                           >
-                            {opt.label}
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                            Delete
                           </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="detail-section">
-                      <h4>Priority</h4>
-                      <div className="priority-actions">
-                        {PRIORITY_OPTIONS.map(opt => (
-                          <button
-                            key={opt.value}
-                            className={`priority-btn ${selectedSuggestion.priority === opt.value ? 'active' : ''}`}
-                            style={{ '--btn-color': opt.color }}
-                            onClick={() => updatePriority(selectedSuggestion._id, opt.value)}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {selectedSuggestion.statusHistory?.length > 0 && (
-                      <div className="detail-section">
-                        <h4>Status History</h4>
-                        <div className="history-list">
-                          {selectedSuggestion.statusHistory.map((entry, idx) => {
-                            const statusInfo = getStatusInfo(entry.status);
-                            return (
-                              <div key={idx} className="history-item">
-                                <span className="history-dot" style={{ background: statusInfo.color }} />
-                                <div className="history-content">
-                                  <span className="history-status">{statusInfo.label}</span>
-                                  <span className="history-date">{formatDate(entry.changedAt)}</span>
-                                  {entry.notes && <p className="history-notes">{entry.notes}</p>}
-                                </div>
-                              </div>
-                            );
-                          })}
                         </div>
-                      </div>
-                    )}
+
+                        {/* Content Card */}
+                        <div className="detail-card content-card">
+                          <div className="card-header">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                            </svg>
+                            <span>Suggestion Details</span>
+                          </div>
+                          <div className="card-body">
+                            <p className="content-text">{selectedSuggestion.content}</p>
+                          </div>
+                        </div>
+
+                        {/* Submitter Card - Only if not anonymous */}
+                        {!selectedSuggestion.isAnonymous && selectedSuggestion.submitter && (
+                          <div className="detail-card submitter-card">
+                            <div className="card-header">
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                              </svg>
+                              <span>Submitter Information</span>
+                            </div>
+                            <div className="card-body">
+                              <div className="submitter-grid">
+                                {selectedSuggestion.submitter.name && (
+                                  <div className="submitter-item">
+                                    <span className="item-label">Name</span>
+                                    <span className="item-value">{selectedSuggestion.submitter.name}</span>
+                                  </div>
+                                )}
+                                {selectedSuggestion.submitter.studentId && (
+                                  <div className="submitter-item">
+                                    <span className="item-label">Student ID</span>
+                                    <span className="item-value">{selectedSuggestion.submitter.studentId}</span>
+                                  </div>
+                                )}
+                                {selectedSuggestion.submitter.email && (
+                                  <div className="submitter-item">
+                                    <span className="item-label">Email</span>
+                                    <span className="item-value">{selectedSuggestion.submitter.email}</span>
+                                  </div>
+                                )}
+                                {selectedSuggestion.submitter.contactNumber && (
+                                  <div className="submitter-item">
+                                    <span className="item-label">Contact</span>
+                                    <span className="item-value">{selectedSuggestion.submitter.contactNumber}</span>
+                                  </div>
+                                )}
+                                {selectedSuggestion.submitter.course && (
+                                  <div className="submitter-item">
+                                    <span className="item-label">Course</span>
+                                    <span className="item-value">{selectedSuggestion.submitter.course}</span>
+                                  </div>
+                                )}
+                                {selectedSuggestion.submitter.yearLevel && (
+                                  <div className="submitter-item">
+                                    <span className="item-label">Year Level</span>
+                                    <span className="item-value">{selectedSuggestion.submitter.yearLevel}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Anonymous Badge */}
+                        {selectedSuggestion.isAnonymous && (
+                          <div className="anonymous-badge">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                            </svg>
+                            <span>Anonymous Submission</span>
+                          </div>
+                        )}
+
+                        {/* Status & Priority Controls */}
+                        <div className="controls-grid">
+                          <div className="detail-card control-card">
+                            <div className="card-header">
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                              <span>Update Status</span>
+                            </div>
+                            <div className="card-body">
+                              <div className="status-pills">
+                                {STATUS_OPTIONS.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    className={`status-pill ${selectedSuggestion.status === opt.value ? 'active' : ''}`}
+                                    style={{ '--pill-color': opt.color }}
+                                    onClick={() => {
+                                      setPendingStatus(opt);
+                                      setStatusNote('');
+                                      setStatusModalOpen(true);
+                                    }}
+                                  >
+                                    <span className="pill-dot" style={{ background: opt.color }}></span>
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="detail-card control-card">
+                            <div className="card-header">
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/>
+                              </svg>
+                              <span>Set Priority</span>
+                            </div>
+                            <div className="card-body">
+                              <div className="priority-pills">
+                                {PRIORITY_OPTIONS.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    className={`priority-pill ${selectedSuggestion.priority === opt.value ? 'active' : ''}`}
+                                    style={{ '--pill-color': opt.color }}
+                                    onClick={() => updatePriority(selectedSuggestion._id, opt.value)}
+                                  >
+                                    {opt.value === 'urgent' && '🔴'}
+                                    {opt.value === 'high' && '🟠'}
+                                    {opt.value === 'medium' && '🟡'}
+                                    {opt.value === 'low' && '🟢'}
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status History Timeline */}
+                        {selectedSuggestion.statusHistory?.length > 0 && (
+                          <div className="detail-card history-card">
+                            <div className="card-header">
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                              </svg>
+                              <span>Activity Timeline</span>
+                            </div>
+                            <div className="card-body">
+                              <div className="timeline">
+                                {selectedSuggestion.statusHistory.map((entry, idx) => {
+                                  const statusInfo = getStatusInfo(entry.status);
+                                  return (
+                                    <div key={idx} className="timeline-item">
+                                      <div className="timeline-marker" style={{ background: statusInfo.color }}></div>
+                                      <div className="timeline-content">
+                                        <div className="timeline-header">
+                                          <span className="timeline-status" style={{ color: statusInfo.color }}>
+                                            {statusInfo.label}
+                                          </span>
+                                          <span className="timeline-date">{formatDate(entry.changedAt)}</span>
+                                        </div>
+                                        {entry.notes && (
+                                          <p className="timeline-notes">{entry.notes}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>
