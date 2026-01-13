@@ -89,9 +89,9 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Body parsing with size limits
-app.use(express.json({ limit: '10kb' })); // Limit body size
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+// Body parsing with size limits (increased for base64 image uploads)
+app.use(express.json({ limit: '5mb' })); // Increased for image uploads
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Sanitize data - prevent NoSQL injection
 app.use(mongoSanitize());

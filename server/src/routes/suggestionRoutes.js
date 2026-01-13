@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import Suggestion from '../models/Suggestion.js';
 import { analyzePriority } from '../services/aiPriorityService.js';
+import { uploadImage } from '../services/imageUploadService.js';
 
 const router = express.Router();
 
@@ -38,13 +39,26 @@ router.post('/', validateSuggestion, async (req, res) => {
       req.body.category
     );
 
+    // Handle image upload if provided
+    let imageUrl = null;
+    if (req.body.image) {
+      console.log('📷 Image attached, uploading...');
+      const uploadResult = await uploadImage(req.body.image);
+      if (uploadResult.success) {
+        imageUrl = uploadResult.url;
+      } else {
+        console.log('⚠️  Image upload failed, continuing without image');
+      }
+    }
+
     const suggestionData = {
       category: req.body.category,
       title: req.body.title,
       content: req.body.content,
       isAnonymous: req.body.isAnonymous,
-      priority: priority, // AI-determined priority
-      aiPriorityReason: reason // Store the reason for transparency
+      priority: priority,
+      aiPriorityReason: reason,
+      imageUrl: imageUrl
     };
 
     // Add submitter info if not anonymous
@@ -74,6 +88,7 @@ router.post('/', validateSuggestion, async (req, res) => {
         priority: suggestion.priority,
         aiPriorityReason: suggestion.aiPriorityReason,
         aiAnalyzed: aiAnalyzed,
+        imageUrl: suggestion.imageUrl,
         createdAt: suggestion.createdAt
       }
     });

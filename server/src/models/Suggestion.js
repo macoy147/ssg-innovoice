@@ -72,6 +72,10 @@ const suggestionSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  imageUrl: {
+    type: String,
+    trim: true
+  },
   statusHistory: [{
     status: String,
     changedAt: {

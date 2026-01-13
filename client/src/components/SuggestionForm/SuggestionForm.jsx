@@ -118,6 +118,8 @@ const SuggestionForm = () => {
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     category: '',
     title: '',
@@ -148,6 +150,43 @@ const SuggestionForm = () => {
 
   const closeToast = () => {
     setToast(null);
+  };
+
+  // Image handling
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB max
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      showToast('Please select a valid image (JPEG, PNG, GIF, or WebP)', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_IMAGE_SIZE) {
+      showToast('Image must be less than 2MB', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    setImageFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   const handleInputChange = (e) => {
@@ -238,6 +277,11 @@ const SuggestionForm = () => {
         submissionData.submitter = formData.submitter;
       }
 
+      // Include image if attached
+      if (imagePreview) {
+        submissionData.image = imagePreview;
+      }
+
       const response = await axios.post(`${API_URL}/api/suggestions`, submissionData);
 
       if (response.data.success) {
@@ -273,6 +317,8 @@ const SuggestionForm = () => {
     setTrackingCode('');
     setAiPriority(null);
     setErrors({});
+    setImageFile(null);
+    setImagePreview(null);
     setFormData({
       category: '',
       title: '',
@@ -506,6 +552,51 @@ const SuggestionForm = () => {
                   {errors.content && <span className="field-error">{errors.content}</span>}
                   <span className="char-count">{formData.content.length}/2000</span>
                 </div>
+              </div>
+
+              {/* Photo Attachment Section */}
+              <div className="form-group photo-upload-section">
+                <label>
+                  Attach Photo <span className="optional">(optional)</span>
+                </label>
+                <p className="photo-hint">Add a photo to support your suggestion (max 2MB)</p>
+                
+                {!imagePreview ? (
+                  <div className="photo-upload-area">
+                    <input
+                      type="file"
+                      id="photo-input"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      onChange={handleImageSelect}
+                      className="photo-input"
+                    />
+                    <label htmlFor="photo-input" className="photo-upload-label">
+                      <div className="upload-icon">📷</div>
+                      <span className="upload-text">Click to upload photo</span>
+                      <span className="upload-formats">JPEG, PNG, GIF, WebP • Max 2MB</span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="photo-preview-container">
+                    <div className="photo-preview">
+                      <img src={imagePreview} alt="Preview" />
+                      <button 
+                        type="button" 
+                        className="remove-photo-btn"
+                        onClick={removeImage}
+                        aria-label="Remove photo"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="photo-info">
+                      <span className="photo-name">{imageFile?.name}</span>
+                      <span className="photo-size">{(imageFile?.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="form-actions">
