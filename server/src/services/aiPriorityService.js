@@ -1,31 +1,31 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 // Lazy initialization - will be set on first use
-let genAI = null;
+let groq = null;
 let initialized = false;
 
 function initializeAI() {
   if (initialized) return;
   initialized = true;
   
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   console.log('═══════════════════════════════════════════════════════');
-  console.log('🤖 AI PRIORITY SERVICE INITIALIZATION');
+  console.log('🤖 AI PRIORITY SERVICE INITIALIZATION (Groq)');
   console.log('═══════════════════════════════════════════════════════');
   console.log(`   API Key: ${apiKey ? `${apiKey.substring(0, 10)}...*** (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
   console.log('═══════════════════════════════════════════════════════');
   
   if (apiKey) {
-    genAI = new GoogleGenerativeAI(apiKey);
+    groq = new Groq({ apiKey });
   }
 }
 
 /**
- * Analyzes suggestion content and determines priority level
+ * Analyzes suggestion content and determines priority level using Groq AI
  * @param {string} title - Suggestion title
  * @param {string} content - Suggestion content/description
  * @param {string} category - Suggestion category
- * @returns {Promise<{priority: string, reason: string}>}
+ * @returns {Promise<{priority: string, reason: string, aiAnalyzed: boolean}>}
  */
 export async function analyzePriority(title, content, category) {
   // Initialize on first call (after dotenv has loaded)
@@ -33,7 +33,7 @@ export async function analyzePriority(title, content, category) {
   
   console.log('');
   console.log('╔═══════════════════════════════════════════════════════╗');
-  console.log('║          🤖 AI PRIORITY ANALYSIS STARTED              ║');
+  console.log('║          🤖 AI PRIORITY ANALYSIS STARTED (Groq)       ║');
   console.log('╠═══════════════════════════════════════════════════════╣');
   console.log(`║ Category: ${category.padEnd(43)}║`);
   console.log(`║ Title: ${title.substring(0, 45).padEnd(46)}║`);
@@ -41,8 +41,8 @@ export async function analyzePriority(title, content, category) {
   console.log('╚═══════════════════════════════════════════════════════╝');
   
   // If no API key, return default priority
-  if (!genAI) {
-    console.log('⚠️  AI NOT AVAILABLE - No Gemini API key configured');
+  if (!groq) {
+    console.log('⚠️  AI NOT AVAILABLE - No Groq API key configured');
     console.log('   Returning default priority: medium');
     return { priority: 'medium', reason: 'Default priority (AI not configured)', aiAnalyzed: false };
   }
@@ -52,10 +52,8 @@ export async function analyzePriority(title, content, category) {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`📤 Sending to Google Gemini AI... (Attempt ${attempt}/${maxRetries})`);
+      console.log(`📤 Sending to Groq AI... (Attempt ${attempt}/${maxRetries})`);
       const startTime = Date.now();
-      
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
       const prompt = `You are an AI assistant helping categorize student suggestions for a university (CTU Daanbantayan Campus) in Cebu, Philippines.
 
@@ -88,12 +86,17 @@ EXAMPLES:
 
 Always explain what the suggestion is about and justify the priority level.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text().trim();
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.3,
+        max_tokens: 200,
+      });
+
+      const text = completion.choices[0]?.message?.content?.trim() || '';
       const elapsed = Date.now() - startTime;
       
-      console.log(`📥 Gemini Response (${elapsed}ms):`);
+      console.log(`📥 Groq Response (${elapsed}ms):`);
       console.log(`   Raw: ${text}`);
       
       // Parse the JSON response - handle various formats
@@ -143,7 +146,8 @@ Always explain what the suggestion is about and justify the priority level.`;
       const isRetryable = error.message.includes('503') || 
                           error.message.includes('overloaded') ||
                           error.message.includes('429') ||
-                          error.message.includes('rate limit');
+                          error.message.includes('rate limit') ||
+                          error.message.includes('timeout');
       
       if (isRetryable && attempt < maxRetries) {
         const waitTime = attempt * 2000; // 2s, 4s, 6s
