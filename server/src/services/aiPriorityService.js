@@ -55,36 +55,51 @@ export async function analyzePriority(title, content, category) {
       console.log(`📤 Sending to Groq AI... (Attempt ${attempt}/${maxRetries})`);
       const startTime = Date.now();
 
-      const prompt = `You are an AI assistant helping categorize student suggestions for a university (CTU Daanbantayan Campus) in Cebu, Philippines.
+      const prompt = `You are a SAFETY-FIRST AI assistant for a university student suggestion system (CTU Daanbantayan Campus, Cebu, Philippines).
 
-IMPORTANT: Students may write in English, Tagalog, Bisaya/Cebuano, or a mix (Taglish/Bislish). You MUST understand all these languages.
+CRITICAL RULE: When in doubt about safety, ALWAYS choose the higher priority level. Student safety is the TOP priority.
 
-Your task: 
-1. Analyze the suggestion content (in any language)
-2. Assign a priority level
-3. Provide a helpful explanation of what the student is suggesting and why you assigned that priority
+Students may write in English, Tagalog, Bisaya/Cebuano, or mixed languages. You MUST understand all.
 
-PRIORITY LEVELS (choose ONE):
-- "urgent" = Safety issues (kabutangan/kaligtasan), harassment, abuse, bullying, health emergencies, security threats, broken critical equipment, discrimination, violence
-- "high" = Affects many students, time-sensitive, major facility problems, academic issues affecting grades, important requests that need quick action
-- "medium" = General improvements, moderate impact, quality of life suggestions, standard facility requests
-- "low" = Minor cosmetic changes, nice-to-have features, long-term ideas, decorations, plants, minor additions
+PRIORITY LEVELS - Read carefully:
+
+🔴 "urgent" - USE THIS FOR ANY OF THESE:
+   - Broken/damaged infrastructure (railings, stairs, floors, ceilings, walls, doors)
+   - Safety hazards (exposed wires, broken glass, slippery floors, flooding)
+   - Health risks (mold, pests, contaminated water, no ventilation)
+   - Security threats (broken locks, no lighting, unsafe areas)
+   - Harassment, bullying, abuse, discrimination, violence
+   - Medical emergencies, injuries
+   - Fire hazards, blocked exits
+   - Keywords: broken, sira, guba, dangerous, delikado, unsafe, hazard, injury, hurt, accident, emergency
+
+🟠 "high" - USE THIS FOR:
+   - Issues affecting many students academically
+   - Time-sensitive problems (exam week issues, deadline-related)
+   - Major facility problems (no water, no electricity, broken AC in hot weather)
+   - Important requests needing quick action
+
+🟡 "medium" - USE THIS FOR:
+   - General improvements and suggestions
+   - Quality of life enhancements
+   - Standard facility requests (more chairs, better WiFi)
+   - Comfort improvements
+
+🟢 "low" - USE THIS FOR:
+   - Cosmetic changes (paint, decorations)
+   - Nice-to-have features
+   - Plants, aesthetic improvements
+   - Minor additions
 
 SUGGESTION TO ANALYZE:
 Category: ${category}
 Title: ${title}
 Description: ${content}
 
-RESPOND WITH ONLY THIS JSON FORMAT (no other text):
-{"priority":"medium","reason":"A clear 1-2 sentence explanation of what the student is suggesting and why this priority was assigned. Always respond in English."}
+IMPORTANT: A broken railing IS urgent because someone could fall and get seriously injured or die. Any structural damage that could cause injury is URGENT.
 
-EXAMPLES:
-- "Palihug butangi ug sabon sa CR" (Bisaya for "Please put soap in CR") → medium, hygiene request
-- "Sira ang hagdan" (Bisaya for "The stairs are broken") → urgent if safety hazard
-- "Dagdagan ng electric fan" (Tagalog for "Add more electric fans") → medium, comfort improvement
-- "May nambubully sa akin" (Tagalog for "Someone is bullying me") → urgent, student safety
-
-Always explain what the suggestion is about and justify the priority level.`;
+RESPOND WITH ONLY THIS JSON (no other text):
+{"priority":"medium","reason":"Explain what the student wants and why you chose this priority level."}`;
 
       const completion = await groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
