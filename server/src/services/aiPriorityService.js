@@ -2,26 +2,61 @@ import Groq from 'groq-sdk';
 
 // Lazy initialization - will be set on first use
 let groq = null;
+let geminiApiKey = null;
 let initialized = false;
 
 function initializeAI() {
   if (initialized) return;
   initialized = true;
   
-  const apiKey = process.env.GROQ_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
+  geminiApiKey = process.env.GEMINI_API_KEY;
+  
   console.log('═══════════════════════════════════════════════════════');
-  console.log('🤖 AI PRIORITY SERVICE INITIALIZATION (Groq)');
+  console.log('🤖 AI PRIORITY SERVICE INITIALIZATION');
   console.log('═══════════════════════════════════════════════════════');
-  console.log(`   API Key: ${apiKey ? `${apiKey.substring(0, 10)}...*** (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
+  console.log(`   Groq API Key: ${groqKey ? `${groqKey.substring(0, 10)}...*** (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
+  console.log(`   Gemini API Key: ${geminiApiKey ? `${geminiApiKey.substring(0, 10)}...*** (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
   console.log('═══════════════════════════════════════════════════════');
   
-  if (apiKey) {
-    groq = new Groq({ apiKey });
+  if (groqKey) {
+    groq = new Groq({ apiKey: groqKey });
   }
 }
 
+// Gemini API call function
+async function callGemini(prompt) {
+  if (!geminiApiKey) {
+    throw new Error('Gemini API key not configured');
+  }
+  
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 200,
+        }
+      })
+    }
+  );
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${error}`);
+  }
+  
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
 /**
- * Analyzes suggestion content and determines priority level using Groq AI
+ * Analyzes suggestion content and determines priority level using AI
+ * Primary: Groq, Fallback: Google Gemini
  * @param {string} title - Suggestion title
  * @param {string} content - Suggestion content/description
  * @param {string} category - Suggestion category
@@ -33,29 +68,20 @@ export async function analyzePriority(title, content, category) {
   
   console.log('');
   console.log('╔═══════════════════════════════════════════════════════╗');
-  console.log('║          🤖 AI PRIORITY ANALYSIS STARTED (Groq)       ║');
+  console.log('║          🤖 AI PRIORITY ANALYSIS STARTED              ║');
   console.log('╠═══════════════════════════════════════════════════════╣');
   console.log(`║ Category: ${category.padEnd(43)}║`);
   console.log(`║ Title: ${title.substring(0, 45).padEnd(46)}║`);
   console.log(`║ Content: ${content.substring(0, 43).padEnd(44)}...║`);
   console.log('╚═══════════════════════════════════════════════════════╝');
   
-  // If no API key, return default priority
-  if (!groq) {
-    console.log('⚠️  AI NOT AVAILABLE - No Groq API key configured');
-    console.log('   Returning default priority: medium');
+  // If no AI configured at all, return default
+  if (!groq && !geminiApiKey) {
+    console.log('⚠️  AI NOT AVAILABLE - No API keys configured');
     return { priority: 'medium', reason: 'Default priority (AI not configured)', aiAnalyzed: false };
   }
 
-  const maxRetries = 3;
-  let lastError = null;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`📤 Sending to Groq AI... (Attempt ${attempt}/${maxRetries})`);
-      const startTime = Date.now();
-
-      const prompt = `You are a SAFETY-FIRST AI for CTU Daanbantayan Campus student suggestions. Students write in English, Tagalog, or Bisaya.
+  const prompt = `You are a SAFETY-FIRST AI for CTU Daanbantayan Campus student suggestions. Students write in English, Tagalog, or Bisaya.
 
 PRIORITY CLASSIFICATION STANDARDS:
 
@@ -121,6 +147,31 @@ Description: ${content}
 Respond ONLY with this JSON:
 {"priority":"medium","reason":"Brief explanation of what student wants and why this priority."}`;
 
+  // Helper to parse AI response
+  const parseResponse = (text) => {
+    let cleanText = text;
+    cleanText = cleanText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+    cleanText = cleanText.trim();
+    
+    const parsed = JSON.parse(cleanText);
+    const validPriorities = ['low', 'medium', 'high', 'urgent'];
+    
+    if (parsed.priority && validPriorities.includes(parsed.priority.toLowerCase())) {
+      return {
+        priority: parsed.priority.toLowerCase(),
+        reason: parsed.reason || 'AI-determined priority',
+        aiAnalyzed: true
+      };
+    }
+    throw new Error('Invalid priority value');
+  };
+
+  // Try Groq first (primary)
+  if (groq) {
+    try {
+      console.log('📤 Trying Groq AI (primary)...');
+      const startTime = Date.now();
+
       const completion = await groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
         model: 'llama-3.3-70b-versatile',
@@ -131,81 +182,57 @@ Respond ONLY with this JSON:
       const text = completion.choices[0]?.message?.content?.trim() || '';
       const elapsed = Date.now() - startTime;
       
-      console.log(`📥 Groq Response (${elapsed}ms):`);
-      console.log(`   Raw: ${text}`);
+      console.log(`📥 Groq Response (${elapsed}ms): ${text.substring(0, 100)}...`);
       
-      // Parse the JSON response - handle various formats
-      let cleanText = text;
-      // Remove markdown code blocks
-      cleanText = cleanText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-      // Remove any leading/trailing whitespace
-      cleanText = cleanText.trim();
-      
-      try {
-        const parsed = JSON.parse(cleanText);
-        
-        // Validate priority value
-        const validPriorities = ['low', 'medium', 'high', 'urgent'];
-        if (parsed.priority && validPriorities.includes(parsed.priority.toLowerCase())) {
-          const finalPriority = parsed.priority.toLowerCase();
-          console.log('');
-          console.log('╔═══════════════════════════════════════════════════════╗');
-          console.log('║          ✅ AI ANALYSIS COMPLETE                      ║');
-          console.log('╠═══════════════════════════════════════════════════════╣');
-          console.log(`║ Priority: ${finalPriority.toUpperCase().padEnd(42)}║`);
-          console.log(`║ Reason: ${(parsed.reason || 'N/A').substring(0, 44).padEnd(45)}║`);
-          console.log('╚═══════════════════════════════════════════════════════╝');
-          console.log('');
-          return {
-            priority: finalPriority,
-            reason: parsed.reason || 'AI-determined priority',
-            aiAnalyzed: true
-          };
-        } else {
-          console.log('⚠️  Invalid priority value from AI:', parsed.priority);
-        }
-      } catch (parseError) {
-        console.error('❌ JSON parse error:', parseError.message);
-        console.error('   Raw text was:', cleanText);
-      }
-
-      // If we got here, parsing failed but no network error
-      console.log('⚠️  Falling back to medium priority');
-      return { priority: 'medium', reason: 'Could not parse AI response', aiAnalyzed: false };
+      const result = parseResponse(text);
+      console.log(`✅ Groq SUCCESS - Priority: ${result.priority.toUpperCase()}`);
+      return result;
 
     } catch (error) {
-      lastError = error;
-      console.error(`❌ Attempt ${attempt} failed:`, error.message);
+      console.error(`❌ Groq failed: ${error.message}`);
       
-      // Check if it's a retryable error (503, 429, etc.)
-      const isRetryable = error.message.includes('503') || 
-                          error.message.includes('overloaded') ||
-                          error.message.includes('429') ||
-                          error.message.includes('rate limit') ||
-                          error.message.includes('timeout');
+      // Check if rate limited - try Gemini fallback
+      const isRateLimited = error.message.includes('429') || 
+                           error.message.includes('rate limit') ||
+                           error.message.includes('quota');
       
-      if (isRetryable && attempt < maxRetries) {
-        const waitTime = attempt * 2000; // 2s, 4s, 6s
-        console.log(`⏳ Retrying in ${waitTime/1000}s...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      } else if (!isRetryable) {
-        // Non-retryable error, break immediately
-        break;
+      if (isRateLimited) {
+        console.log('⚠️  Groq rate limited - switching to Gemini fallback...');
       }
     }
   }
 
-  // All retries failed
+  // Try Gemini as fallback
+  if (geminiApiKey) {
+    try {
+      console.log('📤 Trying Google Gemini (fallback)...');
+      const startTime = Date.now();
+
+      const text = await callGemini(prompt);
+      const elapsed = Date.now() - startTime;
+      
+      console.log(`📥 Gemini Response (${elapsed}ms): ${text.substring(0, 100)}...`);
+      
+      const result = parseResponse(text);
+      console.log(`✅ Gemini SUCCESS - Priority: ${result.priority.toUpperCase()}`);
+      return result;
+
+    } catch (error) {
+      console.error(`❌ Gemini failed: ${error.message}`);
+    }
+  }
+
+  // All AI services failed
   console.error('');
   console.error('╔═══════════════════════════════════════════════════════╗');
-  console.error('║          ❌ AI ANALYSIS FAILED                        ║');
-  console.error('╠═══════════════════════════════════════════════════════╣');
-  console.error(`║ Error: ${(lastError?.message || 'Unknown').substring(0, 45).padEnd(46)}║`);
+  console.error('║          ❌ ALL AI SERVICES FAILED                    ║');
+  console.error('║          Returning default medium priority            ║');
   console.error('╚═══════════════════════════════════════════════════════╝');
   console.error('');
+  
   return { 
     priority: 'medium', 
-    reason: 'AI service temporarily unavailable. Default priority assigned - admin will review manually.', 
+    reason: 'AI services temporarily unavailable. Default priority assigned - admin will review manually.', 
     aiAnalyzed: false 
   };
 }
