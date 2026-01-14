@@ -142,6 +142,26 @@ router.post('/logout', verifyAdminPassword, async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
+// POST /api/admin/logout-beacon - Handle logout when tab closes (via sendBeacon)
+router.post('/logout-beacon', async (req, res) => {
+  const password = req.query.password;
+  const adminInfo = getAdminInfo(password);
+  
+  if (adminInfo) {
+    // Remove from online admins by label
+    onlineAdmins.delete(adminInfo.label);
+    
+    // Log logout activity
+    await logActivity(
+      { headers: { 'x-admin-password': password }, ip: req.ip, connection: req.connection },
+      'logout',
+      {}
+    );
+  }
+  
+  res.json({ success: true });
+});
+
 // POST /api/admin/heartbeat - Update last seen time
 router.post('/heartbeat', verifyAdminPassword, async (req, res) => {
   const adminInfo = req.adminInfo;
@@ -166,7 +186,7 @@ router.post('/heartbeat', verifyAdminPassword, async (req, res) => {
 // GET /api/admin/online - Get list of online admins
 router.get('/online', verifyAdminPassword, async (req, res) => {
   const now = new Date();
-  const onlineTimeout = 45 * 1000; // 45 seconds timeout (heartbeat is 30s + buffer)
+  const onlineTimeout = 35 * 1000; // 35 seconds timeout (heartbeat is 30s + small buffer)
   
   const onlineList = [];
   

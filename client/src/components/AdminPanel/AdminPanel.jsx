@@ -294,6 +294,16 @@ function AdminPanel() {
       }
     };
     
+    // Handle tab/browser close - send logout request
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for reliable delivery on page close
+      const data = JSON.stringify({});
+      navigator.sendBeacon(
+        `${API_URL}/api/admin/logout-beacon?password=${encodeURIComponent(password)}`,
+        data
+      );
+    };
+    
     // Initial heartbeat
     fetch(`${API_URL}/api/admin/heartbeat`, {
       method: 'POST',
@@ -303,13 +313,15 @@ function AdminPanel() {
     // Start polling
     startPolling();
     
-    // Listen for visibility changes
+    // Listen for visibility changes and tab close
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
       clearInterval(heartbeatInterval);
       clearInterval(onlineInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [isAuthenticated, password]);
 
