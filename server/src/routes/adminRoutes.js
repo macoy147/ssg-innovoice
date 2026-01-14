@@ -166,7 +166,7 @@ router.post('/heartbeat', verifyAdminPassword, async (req, res) => {
 // GET /api/admin/online - Get list of online admins
 router.get('/online', verifyAdminPassword, async (req, res) => {
   const now = new Date();
-  const onlineTimeout = 15 * 1000; // 15 seconds timeout for real-time feel
+  const onlineTimeout = 45 * 1000; // 45 seconds timeout (heartbeat is 30s + buffer)
   
   const onlineList = [];
   

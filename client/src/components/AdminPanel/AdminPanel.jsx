@@ -253,22 +253,46 @@ function AdminPanel() {
     }
   }, [isAuthenticated, filters, pagination.page]);
 
-  // Heartbeat and online admins polling - 5 second intervals for real-time feel
+  // Heartbeat and online admins polling - only when tab is visible
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    // Send heartbeat every 5 seconds for real-time online status
-    const heartbeatInterval = setInterval(() => {
-      fetch(`${API_URL}/api/admin/heartbeat`, {
-        method: 'POST',
-        headers: { 'x-admin-password': password }
-      }).catch(err => console.error('Heartbeat error:', err));
-    }, 5000);
+    let heartbeatInterval;
+    let onlineInterval;
     
-    // Fetch online admins every 5 seconds for real-time updates
-    const onlineInterval = setInterval(() => {
-      fetchOnlineAdmins();
-    }, 5000);
+    const startPolling = () => {
+      // Clear any existing intervals
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (onlineInterval) clearInterval(onlineInterval);
+      
+      // Send heartbeat every 30 seconds
+      heartbeatInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetch(`${API_URL}/api/admin/heartbeat`, {
+            method: 'POST',
+            headers: { 'x-admin-password': password }
+          }).catch(err => console.error('Heartbeat error:', err));
+        }
+      }, 30000);
+      
+      // Fetch online admins every 30 seconds
+      onlineInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetchOnlineAdmins();
+        }
+      }, 30000);
+    };
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Tab became visible - send immediate heartbeat and fetch online admins
+        fetch(`${API_URL}/api/admin/heartbeat`, {
+          method: 'POST',
+          headers: { 'x-admin-password': password }
+        }).catch(err => console.error('Heartbeat error:', err));
+        fetchOnlineAdmins();
+      }
+    };
     
     // Initial heartbeat
     fetch(`${API_URL}/api/admin/heartbeat`, {
@@ -276,9 +300,16 @@ function AdminPanel() {
       headers: { 'x-admin-password': password }
     }).catch(err => console.error('Heartbeat error:', err));
     
+    // Start polling
+    startPolling();
+    
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     return () => {
       clearInterval(heartbeatInterval);
       clearInterval(onlineInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isAuthenticated, password]);
 
@@ -389,6 +420,11 @@ function AdminPanel() {
       const res = await fetch(`${API_URL}/api/admin/activity-logs?${params}`, {
         headers: { 'x-admin-password': password }
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
       if (data.success) {
         setActivityLogs(data.data);
@@ -396,6 +432,7 @@ function AdminPanel() {
       }
     } catch (error) {
       console.error('Error fetching activity logs:', error);
+      // Don't show notification for background fetches to avoid spam
     }
   };
 
@@ -405,6 +442,11 @@ function AdminPanel() {
       const res = await fetch(`${API_URL}/api/admin/activity-logs/stats`, {
         headers: { 'x-admin-password': password }
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
       if (data.success) {
         setActivityStats(data.data);
@@ -419,6 +461,11 @@ function AdminPanel() {
       const res = await fetch(`${API_URL}/api/admin/stats`, {
         headers: { 'x-admin-password': password }
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
       if (data.success) setStats(data.data);
     } catch (error) {
@@ -431,6 +478,11 @@ function AdminPanel() {
       const res = await fetch(`${API_URL}/api/admin/online`, {
         headers: { 'x-admin-password': password }
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
       if (data.success) setOnlineAdmins(data.data);
     } catch (error) {
@@ -1378,12 +1430,12 @@ function AdminPanel() {
               </div>
               <div className="online-list">
                 {onlineAdmins.map(admin => (
-                  <div key={admin.role} className="online-admin-item">
+                  <div key={admin.label} className="online-admin-item">
                     <div className="online-avatar" style={{ background: admin.color }}>
                       {admin.label.charAt(0)}
                     </div>
                     <span className="online-name">{admin.label}</span>
-                    {admin.role === adminInfo?.role && <span className="you-badge">You</span>}
+                    {admin.label === adminInfo?.label && <span className="you-badge">You</span>}
                   </div>
                 ))}
               </div>
