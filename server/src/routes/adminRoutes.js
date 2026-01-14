@@ -27,12 +27,12 @@ const ADMIN_ACCOUNTS = {
     label: 'CoEd Governor',
     color: '#14b8a6'
   },
-  'ssg2526press': {
+  'ssg2526presssec': {
     role: 'press_secretary',
     label: 'Press Secretary',
     color: '#f59e0b'
   },
-  'ssg2526net': {
+  'ssg2526netsec': {
     role: 'network_secretary',
     label: 'Secretary on Networks',
     color: '#10b981'
@@ -816,6 +816,38 @@ router.get('/archived', verifyAdminPassword, async (req, res) => {
   }
 });
 
+// GET /api/admin/activity-logs/deprecated-count - Get count of logs with deprecated roles
+router.get('/activity-logs/deprecated-count', verifyAdminPassword, async (req, res) => {
+  try {
+    // Only developer can check this
+    if (req.adminInfo.role !== 'developer') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only developers can access this'
+      });
+    }
+    
+    const deprecatedRoles = ['president', 'vice_president', 'cote_governor', 'coed_governor', 'admin', 'executive_admin'];
+    
+    const count = await ActivityLog.countDocuments({
+      adminRole: { $in: deprecatedRoles }
+    });
+    
+    res.json({
+      success: true,
+      count,
+      deprecatedRoles
+    });
+  } catch (error) {
+    console.error('Error counting deprecated logs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error counting deprecated logs',
+      error: error.message
+    });
+  }
+});
+
 // DELETE /api/admin/activity-logs/cleanup - Remove old logs with deprecated roles
 router.delete('/activity-logs/cleanup', verifyAdminPassword, async (req, res) => {
   try {
@@ -836,7 +868,9 @@ router.delete('/activity-logs/cleanup', verifyAdminPassword, async (req, res) =>
     
     res.json({
       success: true,
-      message: `Cleaned up ${result.deletedCount} old activity logs`,
+      message: result.deletedCount > 0 
+        ? `Cleaned up ${result.deletedCount} old activity logs`
+        : 'No deprecated logs found to clean up',
       deletedCount: result.deletedCount
     });
   } catch (error) {

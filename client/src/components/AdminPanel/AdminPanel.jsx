@@ -177,6 +177,11 @@ function AdminPanel() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
 
+  // Cleanup logs modal state
+  const [cleanupModalOpen, setCleanupModalOpen] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [deprecatedLogsCount, setDeprecatedLogsCount] = useState(null);
+
   // Save theme preference
   useEffect(() => {
     localStorage.setItem('adminDarkMode', JSON.stringify(darkMode));
@@ -220,10 +225,12 @@ function AdminPanel() {
     return suggestion ? suggestion.isRead !== true : false;
   };
 
-  // Check if already authenticated (session storage)
+  // Generate unique session token on login, validate on page load
+  // sessionStorage automatically clears when tab is closed
   useEffect(() => {
     const savedPassword = sessionStorage.getItem('adminPassword');
     const savedAdminInfo = sessionStorage.getItem('adminInfo');
+    
     if (savedPassword) {
       setPassword(savedPassword);
       if (savedAdminInfo) {
@@ -332,6 +339,7 @@ function AdminPanel() {
       const data = await res.json();
       if (data.success) {
         sessionStorage.setItem('adminPassword', password);
+        
         if (data.admin) {
           sessionStorage.setItem('adminInfo', JSON.stringify(data.admin));
           setAdminInfo(data.admin);
@@ -635,6 +643,7 @@ function AdminPanel() {
       console.error('Error logging logout:', error);
     }
     
+    // Clear session data
     sessionStorage.removeItem('adminPassword');
     sessionStorage.removeItem('adminInfo');
     setIsAuthenticated(false);
@@ -1122,6 +1131,138 @@ function AdminPanel() {
                   </svg>
                   Delete {selectedIds.length} Item{selectedIds.length > 1 ? 's' : ''}
                 </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Cleanup Logs Confirmation Modal */}
+        {cleanupModalOpen && (
+          <>
+            <div className="delete-modal-overlay" onClick={() => !cleanupLoading && setCleanupModalOpen(false)} />
+            <div className="delete-confirm-modal cleanup-modal">
+              <div className="delete-modal-icon">
+                <div className={`icon-circle ${deprecatedLogsCount === 0 ? 'success' : 'cleanup'}`}>
+                  {deprecatedLogsCount === 0 ? (
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                      <path d="M15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2-5V9h8v10H8v-5zm2 4h4v-6h-4v6z"/>
+                    </svg>
+                  )}
+                </div>
+              </div>
+              
+              <div className="delete-modal-content">
+                {deprecatedLogsCount === null ? (
+                  <>
+                    <h3>Checking Logs...</h3>
+                    <p>Please wait while we check for deprecated activity logs.</p>
+                    <div className="cleanup-loading">
+                      <span className="spinner large"></span>
+                    </div>
+                  </>
+                ) : deprecatedLogsCount === 0 ? (
+                  <>
+                    <h3>All Clean! ✨</h3>
+                    <p>There are no deprecated activity logs to clean up. Your activity logs are already using the current role system.</p>
+                    <div className="cleanup-info success">
+                      <div className="cleanup-info-header success">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <span>Current roles in use:</span>
+                      </div>
+                      <div className="cleanup-roles">
+                        <span className="role-tag current">executive</span>
+                        <span className="role-tag current">press_secretary</span>
+                        <span className="role-tag current">network_secretary</span>
+                        <span className="role-tag current">developer</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3>Cleanup Old Activity Logs?</h3>
+                    <p>Found <strong>{deprecatedLogsCount}</strong> activity log{deprecatedLogsCount > 1 ? 's' : ''} with deprecated admin role names.</p>
+                    
+                    <div className="cleanup-info">
+                      <div className="cleanup-info-header">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <span>Roles to be cleaned up:</span>
+                      </div>
+                      <div className="cleanup-roles">
+                        <span className="role-tag deprecated">president</span>
+                        <span className="role-tag deprecated">vice_president</span>
+                        <span className="role-tag deprecated">cote_governor</span>
+                        <span className="role-tag deprecated">coed_governor</span>
+                        <span className="role-tag deprecated">admin</span>
+                      </div>
+                      <p className="cleanup-note">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Current roles (executive, press_secretary, network_secretary, developer) will not be affected.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <div className="delete-modal-actions">
+                <button 
+                  className="cancel-btn" 
+                  onClick={() => setCleanupModalOpen(false)}
+                  disabled={cleanupLoading}
+                >
+                  {deprecatedLogsCount === 0 ? 'Close' : 'Cancel'}
+                </button>
+                {deprecatedLogsCount > 0 && (
+                  <button 
+                    className="confirm-delete-btn cleanup-confirm"
+                    disabled={cleanupLoading}
+                    onClick={async () => {
+                      setCleanupLoading(true);
+                      try {
+                        const res = await fetch(`${API_URL}/api/admin/activity-logs/cleanup`, {
+                          method: 'DELETE',
+                          headers: { 'x-admin-password': password }
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          showNotification(data.message);
+                          fetchActivityLogs();
+                          fetchActivityStats();
+                          setCleanupModalOpen(false);
+                        } else {
+                          showNotification(data.message, 'error');
+                        }
+                      } catch (error) {
+                        showNotification('Error cleaning up logs', 'error');
+                      } finally {
+                        setCleanupLoading(false);
+                      }
+                    }}
+                  >
+                    {cleanupLoading ? (
+                      <>
+                        <span className="spinner"></span>
+                        Cleaning...
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                        Cleanup {deprecatedLogsCount} Log{deprecatedLogsCount > 1 ? 's' : ''}
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </>
@@ -2258,23 +2399,18 @@ function AdminPanel() {
                     <button 
                       className="cleanup-btn" 
                       onClick={async () => {
-                        if (window.confirm('This will remove old activity logs with deprecated role names. Continue?')) {
-                          try {
-                            const res = await fetch(`${API_URL}/api/admin/activity-logs/cleanup`, {
-                              method: 'DELETE',
-                              headers: { 'x-admin-password': password }
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                              showNotification(data.message);
-                              fetchActivityLogs();
-                              fetchActivityStats();
-                            } else {
-                              showNotification(data.message, 'error');
-                            }
-                          } catch (error) {
-                            showNotification('Error cleaning up logs', 'error');
+                        setCleanupModalOpen(true);
+                        setDeprecatedLogsCount(null);
+                        try {
+                          const res = await fetch(`${API_URL}/api/admin/activity-logs/deprecated-count`, {
+                            headers: { 'x-admin-password': password }
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setDeprecatedLogsCount(data.count);
                           }
+                        } catch (error) {
+                          console.error('Error fetching deprecated count:', error);
                         }
                       }}
                     >
