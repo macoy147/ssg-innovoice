@@ -1,30 +1,195 @@
 import express from 'express';
 import Suggestion from '../models/Suggestion.js';
+import ActivityLog from '../models/ActivityLog.js';
 
 const router = express.Router();
 
-// Simple password verification middleware
+// Admin accounts configuration
+// Note: President, VP, CoTE Gov, CoEd Gov all log as "executive" role for activity tracking
+const ADMIN_ACCOUNTS = {
+  'ssg2526pres': {
+    role: 'executive',
+    label: 'President',
+    color: '#8b5cf6'
+  },
+  'ssg2526vp': {
+    role: 'executive',
+    label: 'Vice President',
+    color: '#ec4899'
+  },
+  'ssg2526cote': {
+    role: 'executive',
+    label: 'CoTE Governor',
+    color: '#3b82f6'
+  },
+  'ssg2526coed': {
+    role: 'executive',
+    label: 'CoEd Governor',
+    color: '#14b8a6'
+  },
+  'ssg2526press': {
+    role: 'press_secretary',
+    label: 'Press Secretary',
+    color: '#f59e0b'
+  },
+  'ssg2526net': {
+    role: 'network_secretary',
+    label: 'Secretary on Networks',
+    color: '#10b981'
+  },
+  'ssg2526dev': {
+    role: 'developer',
+    label: 'Developer',
+    color: '#6366f1'
+  },
+  'ssg2526juls': {
+    role: 'executive',
+    label: 'Julianna',
+    color: '#f472b6'
+  }
+};
+
+// Track online admins (in-memory store) - keyed by label for uniqueness
+const onlineAdmins = new Map();
+
+// Helper to get admin info from password
+const getAdminInfo = (password) => {
+  return ADMIN_ACCOUNTS[password] || null;
+};
+
+// Helper to log activity
+const logActivity = async (req, action, details = {}) => {
+  try {
+    const password = req.headers['x-admin-password'];
+    const adminInfo = getAdminInfo(password);
+    
+    if (!adminInfo) return;
+    
+    const log = new ActivityLog({
+      adminRole: adminInfo.role,
+      adminLabel: adminInfo.label,
+      action,
+      suggestionId: details.suggestionId || null,
+      suggestionTitle: details.suggestionTitle || null,
+      suggestionTrackingCode: details.suggestionTrackingCode || null,
+      details: details.extra || {},
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    
+    await log.save();
+  } catch (error) {
+    console.error('Error logging activity:', error);
+  }
+};
+
+// Password verification middleware with multi-admin support
 const verifyAdminPassword = (req, res, next) => {
   const password = req.headers['x-admin-password'];
   
-  if (!password || password !== process.env.ADMIN_PASSWORD) {
+  if (!password || !ADMIN_ACCOUNTS[password]) {
     return res.status(401).json({
       success: false,
       message: 'Invalid admin password'
     });
   }
+  
+  // Attach admin info to request
+  req.adminInfo = ADMIN_ACCOUNTS[password];
   next();
 };
 
-// POST /api/admin/verify - Verify admin password
-router.post('/verify', (req, res) => {
+// POST /api/admin/verify - Verify admin password and return role info
+router.post('/verify', async (req, res) => {
   const { password } = req.body;
+  const adminInfo = getAdminInfo(password);
   
-  if (password === process.env.ADMIN_PASSWORD) {
-    res.json({ success: true, message: 'Password verified' });
+  if (adminInfo) {
+    // Track online admin by label (unique per person)
+    onlineAdmins.set(adminInfo.label, {
+      ...adminInfo,
+      lastSeen: new Date(),
+      loginTime: new Date()
+    });
+    
+    // Log login activity
+    await logActivity(
+      { headers: { 'x-admin-password': password }, ip: req.ip, connection: req.connection },
+      'login',
+      {}
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Password verified',
+      admin: {
+        role: adminInfo.role,
+        label: adminInfo.label,
+        color: adminInfo.color
+      }
+    });
   } else {
     res.status(401).json({ success: false, message: 'Invalid password' });
   }
+});
+
+// POST /api/admin/logout - Log logout activity
+router.post('/logout', verifyAdminPassword, async (req, res) => {
+  // Remove from online admins by label
+  onlineAdmins.delete(req.adminInfo.label);
+  
+  await logActivity(req, 'logout', {});
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// POST /api/admin/heartbeat - Update last seen time
+router.post('/heartbeat', verifyAdminPassword, async (req, res) => {
+  const adminInfo = req.adminInfo;
+  
+  if (onlineAdmins.has(adminInfo.label)) {
+    const existing = onlineAdmins.get(adminInfo.label);
+    onlineAdmins.set(adminInfo.label, {
+      ...existing,
+      lastSeen: new Date()
+    });
+  } else {
+    onlineAdmins.set(adminInfo.label, {
+      ...adminInfo,
+      lastSeen: new Date(),
+      loginTime: new Date()
+    });
+  }
+  
+  res.json({ success: true });
+});
+
+// GET /api/admin/online - Get list of online admins
+router.get('/online', verifyAdminPassword, async (req, res) => {
+  const now = new Date();
+  const onlineTimeout = 15 * 1000; // 15 seconds timeout for real-time feel
+  
+  const onlineList = [];
+  
+  onlineAdmins.forEach((admin, label) => {
+    const timeSinceLastSeen = now - new Date(admin.lastSeen);
+    if (timeSinceLastSeen < onlineTimeout) {
+      onlineList.push({
+        role: admin.role,
+        label: admin.label,
+        color: admin.color,
+        lastSeen: admin.lastSeen,
+        loginTime: admin.loginTime
+      });
+    } else {
+      // Remove stale entries
+      onlineAdmins.delete(label);
+    }
+  });
+  
+  res.json({
+    success: true,
+    data: onlineList
+  });
 });
 
 // GET /api/admin/suggestions - Get all suggestions with full details
@@ -79,23 +244,15 @@ router.get('/suggestions', verifyAdminPassword, async (req, res) => {
         sortOption = { updatedAt: -1 };
         break;
       case 'priority_high':
-        // Custom sort: urgent > high > medium > low
-        sortOption = { 
-          priority: 1, // Will be handled with aggregation or custom sort
-          createdAt: -1 
-        };
+        sortOption = { priority: 1, createdAt: -1 };
         break;
       case 'priority_low':
-        sortOption = { 
-          priority: -1,
-          createdAt: -1 
-        };
+        sortOption = { priority: -1, createdAt: -1 };
         break;
       default:
         sortOption = { createdAt: -1 };
     }
 
-    // For priority sorting, we need to use aggregation for proper ordering
     let suggestions;
     const count = await Suggestion.countDocuments(query);
     
@@ -166,6 +323,13 @@ router.get('/suggestions/:id', verifyAdminPassword, async (req, res) => {
       });
     }
 
+    // Log view activity
+    await logActivity(req, 'view_suggestion', {
+      suggestionId: suggestion._id,
+      suggestionTitle: suggestion.title,
+      suggestionTrackingCode: suggestion.trackingCode
+    });
+
     res.json({ success: true, data: suggestion });
   } catch (error) {
     console.error('Error fetching suggestion:', error);
@@ -198,15 +362,26 @@ router.put('/suggestions/:id/status', verifyAdminPassword, async (req, res) => {
       });
     }
 
-    // Add to status history
+    const oldStatus = suggestion.status;
+
+    // Add to status history with admin info
     suggestion.statusHistory.push({
       status,
       notes: notes || '',
-      changedAt: new Date()
+      changedAt: new Date(),
+      changedBy: req.adminInfo.label
     });
 
     suggestion.status = status;
     await suggestion.save();
+
+    // Log activity
+    await logActivity(req, 'update_status', {
+      suggestionId: suggestion._id,
+      suggestionTitle: suggestion.title,
+      suggestionTrackingCode: suggestion.trackingCode,
+      extra: { oldStatus, newStatus: status, notes }
+    });
 
     res.json({
       success: true,
@@ -236,18 +411,25 @@ router.put('/suggestions/:id/priority', verifyAdminPassword, async (req, res) =>
       });
     }
 
-    const suggestion = await Suggestion.findByIdAndUpdate(
-      req.params.id,
-      { priority },
-      { new: true }
-    );
-
+    const suggestion = await Suggestion.findById(req.params.id);
     if (!suggestion) {
       return res.status(404).json({
         success: false,
         message: 'Suggestion not found'
       });
     }
+
+    const oldPriority = suggestion.priority;
+    suggestion.priority = priority;
+    await suggestion.save();
+
+    // Log activity
+    await logActivity(req, 'update_priority', {
+      suggestionId: suggestion._id,
+      suggestionTitle: suggestion.title,
+      suggestionTrackingCode: suggestion.trackingCode,
+      extra: { oldPriority, newPriority: priority }
+    });
 
     res.json({
       success: true,
@@ -276,11 +458,18 @@ router.put('/suggestions/:id/read', verifyAdminPassword, async (req, res) => {
       });
     }
 
-    // Only update if not already read
     if (!suggestion.isRead) {
       suggestion.isRead = true;
       suggestion.readAt = new Date();
+      suggestion.readBy = req.adminInfo.label;
       await suggestion.save();
+
+      // Log activity
+      await logActivity(req, 'mark_read', {
+        suggestionId: suggestion._id,
+        suggestionTitle: suggestion.title,
+        suggestionTrackingCode: suggestion.trackingCode
+      });
     }
 
     res.json({
@@ -310,10 +499,18 @@ router.put('/suggestions/:id/archive', verifyAdminPassword, async (req, res) => 
       });
     }
 
-    // Toggle archive status
+    const wasArchived = suggestion.isArchived;
     suggestion.isArchived = !suggestion.isArchived;
     suggestion.archivedAt = suggestion.isArchived ? new Date() : null;
+    suggestion.archivedBy = suggestion.isArchived ? req.adminInfo.label : null;
     await suggestion.save();
+
+    // Log activity
+    await logActivity(req, wasArchived ? 'unarchive_suggestion' : 'archive_suggestion', {
+      suggestionId: suggestion._id,
+      suggestionTitle: suggestion.title,
+      suggestionTrackingCode: suggestion.trackingCode
+    });
 
     res.json({
       success: true,
@@ -333,7 +530,7 @@ router.put('/suggestions/:id/archive', verifyAdminPassword, async (req, res) => 
 // DELETE /api/admin/suggestions/:id - Delete suggestion
 router.delete('/suggestions/:id', verifyAdminPassword, async (req, res) => {
   try {
-    const suggestion = await Suggestion.findByIdAndDelete(req.params.id);
+    const suggestion = await Suggestion.findById(req.params.id);
     
     if (!suggestion) {
       return res.status(404).json({
@@ -341,6 +538,17 @@ router.delete('/suggestions/:id', verifyAdminPassword, async (req, res) => {
         message: 'Suggestion not found'
       });
     }
+
+    const suggestionInfo = {
+      suggestionId: suggestion._id,
+      suggestionTitle: suggestion.title,
+      suggestionTrackingCode: suggestion.trackingCode
+    };
+
+    await Suggestion.findByIdAndDelete(req.params.id);
+
+    // Log activity
+    await logActivity(req, 'delete_suggestion', suggestionInfo);
 
     res.json({
       success: true,
@@ -356,10 +564,54 @@ router.delete('/suggestions/:id', verifyAdminPassword, async (req, res) => {
   }
 });
 
+// POST /api/admin/suggestions/bulk-delete - Bulk delete suggestions
+router.post('/suggestions/bulk-delete', verifyAdminPassword, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No suggestion IDs provided'
+      });
+    }
+
+    // Get suggestion info before deleting
+    const suggestions = await Suggestion.find({ _id: { $in: ids } });
+    const deletedInfo = suggestions.map(s => ({
+      id: s._id,
+      title: s.title,
+      trackingCode: s.trackingCode
+    }));
+
+    await Suggestion.deleteMany({ _id: { $in: ids } });
+
+    // Log activity
+    await logActivity(req, 'bulk_delete', {
+      extra: { 
+        count: ids.length,
+        deletedSuggestions: deletedInfo
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `${ids.length} suggestions deleted successfully`,
+      deletedCount: ids.length
+    });
+  } catch (error) {
+    console.error('Error bulk deleting:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting suggestions',
+      error: error.message
+    });
+  }
+});
+
 // GET /api/admin/stats - Get dashboard statistics
 router.get('/stats', verifyAdminPassword, async (req, res) => {
   try {
-    // Exclude archived and deleted from stats
     const activeFilter = { isArchived: { $ne: true }, isDeleted: { $ne: true } };
     
     const total = await Suggestion.countDocuments(activeFilter);
@@ -379,7 +631,6 @@ router.get('/stats', verifyAdminPassword, async (req, res) => {
       { $group: { _id: '$priority', count: { $sum: 1 } } }
     ]);
 
-    // Recent activity (last 7 days)
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     const recentCount = await Suggestion.countDocuments({
@@ -387,13 +638,8 @@ router.get('/stats', verifyAdminPassword, async (req, res) => {
       createdAt: { $gte: weekAgo }
     });
 
-    // Anonymous vs identified
     const anonymousCount = await Suggestion.countDocuments({ ...activeFilter, isAnonymous: true });
-    
-    // Unread count
     const unreadCount = await Suggestion.countDocuments({ ...activeFilter, isRead: { $ne: true } });
-    
-    // Archive and trash counts
     const archivedCount = await Suggestion.countDocuments({ isArchived: true, isDeleted: { $ne: true } });
     const deletedCount = await Suggestion.countDocuments({ isDeleted: true });
 
@@ -417,6 +663,120 @@ router.get('/stats', verifyAdminPassword, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching statistics',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// ACTIVITY LOGS ENDPOINTS
+// ==========================================
+
+// GET /api/admin/activity-logs - Get activity logs
+router.get('/activity-logs', verifyAdminPassword, async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 50, 
+      adminRole, 
+      action, 
+      dateFrom, 
+      dateTo,
+      search
+    } = req.query;
+    
+    const query = {};
+    
+    if (adminRole && adminRole !== 'all') {
+      query.adminRole = adminRole;
+    }
+    
+    if (action && action !== 'all') {
+      query.action = action;
+    }
+    
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lte = new Date(dateTo);
+    }
+    
+    // Search by tracking code or suggestion title
+    if (search) {
+      query.$or = [
+        { suggestionTrackingCode: { $regex: search, $options: 'i' } },
+        { suggestionTitle: { $regex: search, $options: 'i' } },
+        { adminLabel: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const count = await ActivityLog.countDocuments(query);
+    
+    const logs = await ActivityLog.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((page - 1) * parseInt(limit));
+    
+    res.json({
+      success: true,
+      data: logs,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        pages: Math.ceil(count / limit),
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching activity logs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching activity logs',
+      error: error.message
+    });
+  }
+});
+
+// GET /api/admin/activity-logs/stats - Get activity log statistics
+router.get('/activity-logs/stats', verifyAdminPassword, async (req, res) => {
+  try {
+    const totalLogs = await ActivityLog.countDocuments();
+    
+    const byAdmin = await ActivityLog.aggregate([
+      { $group: { _id: '$adminRole', count: { $sum: 1 }, label: { $first: '$adminLabel' } } },
+      { $sort: { count: -1 } }
+    ]);
+    
+    const byAction = await ActivityLog.aggregate([
+      { $group: { _id: '$action', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    
+    // Today's activity
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayCount = await ActivityLog.countDocuments({ createdAt: { $gte: today } });
+    
+    // This week's activity
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekCount = await ActivityLog.countDocuments({ createdAt: { $gte: weekAgo } });
+    
+    res.json({
+      success: true,
+      data: {
+        totalLogs,
+        byAdmin,
+        byAction,
+        todayCount,
+        weekCount
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching activity stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching activity statistics',
       error: error.message
     });
   }
@@ -456,205 +816,34 @@ router.get('/archived', verifyAdminPassword, async (req, res) => {
   }
 });
 
-// GET /api/admin/trash - Get deleted suggestions
-router.get('/trash', verifyAdminPassword, async (req, res) => {
+// DELETE /api/admin/activity-logs/cleanup - Remove old logs with deprecated roles
+router.delete('/activity-logs/cleanup', verifyAdminPassword, async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    // Only developer can clean up logs
+    if (req.adminInfo.role !== 'developer') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only developers can clean up activity logs'
+      });
+    }
     
-    const query = { isDeleted: true };
-    const count = await Suggestion.countDocuments(query);
+    // Delete logs with old/deprecated role names
+    const deprecatedRoles = ['president', 'vice_president', 'cote_governor', 'coed_governor', 'admin', 'executive_admin'];
     
-    const suggestions = await Suggestion.find(query)
-      .sort({ deletedAt: -1 })
-      .limit(parseInt(limit))
-      .skip((page - 1) * parseInt(limit))
-      .select('-__v');
-
-    res.json({
-      success: true,
-      data: suggestions,
-      pagination: {
-        total: count,
-        page: parseInt(page),
-        pages: Math.ceil(count / limit),
-        limit: parseInt(limit)
-      }
+    const result = await ActivityLog.deleteMany({
+      adminRole: { $in: deprecatedRoles }
     });
-  } catch (error) {
-    console.error('Error fetching trash:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching deleted suggestions',
-      error: error.message
-    });
-  }
-});
-
-// PUT /api/admin/suggestions/:id/archive - Archive a suggestion
-router.put('/suggestions/:id/archive', verifyAdminPassword, async (req, res) => {
-  try {
-    const suggestion = await Suggestion.findByIdAndUpdate(
-      req.params.id,
-      { isArchived: true, archivedAt: new Date() },
-      { new: true }
-    );
-
-    if (!suggestion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Suggestion not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Suggestion archived successfully',
-      data: suggestion
-    });
-  } catch (error) {
-    console.error('Error archiving suggestion:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error archiving suggestion',
-      error: error.message
-    });
-  }
-});
-
-// PUT /api/admin/suggestions/:id/unarchive - Restore from archive
-router.put('/suggestions/:id/unarchive', verifyAdminPassword, async (req, res) => {
-  try {
-    const suggestion = await Suggestion.findByIdAndUpdate(
-      req.params.id,
-      { isArchived: false, archivedAt: null },
-      { new: true }
-    );
-
-    if (!suggestion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Suggestion not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Suggestion restored from archive',
-      data: suggestion
-    });
-  } catch (error) {
-    console.error('Error unarchiving suggestion:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error restoring suggestion',
-      error: error.message
-    });
-  }
-});
-
-// PUT /api/admin/suggestions/:id/soft-delete - Move to trash
-router.put('/suggestions/:id/soft-delete', verifyAdminPassword, async (req, res) => {
-  try {
-    const suggestion = await Suggestion.findByIdAndUpdate(
-      req.params.id,
-      { isDeleted: true, deletedAt: new Date() },
-      { new: true }
-    );
-
-    if (!suggestion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Suggestion not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Suggestion moved to trash',
-      data: suggestion
-    });
-  } catch (error) {
-    console.error('Error deleting suggestion:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error moving to trash',
-      error: error.message
-    });
-  }
-});
-
-// PUT /api/admin/suggestions/:id/restore - Restore from trash
-router.put('/suggestions/:id/restore', verifyAdminPassword, async (req, res) => {
-  try {
-    const suggestion = await Suggestion.findByIdAndUpdate(
-      req.params.id,
-      { isDeleted: false, deletedAt: null },
-      { new: true }
-    );
-
-    if (!suggestion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Suggestion not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Suggestion restored from trash',
-      data: suggestion
-    });
-  } catch (error) {
-    console.error('Error restoring suggestion:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error restoring suggestion',
-      error: error.message
-    });
-  }
-});
-
-// DELETE /api/admin/suggestions/:id/permanent - Permanently delete
-router.delete('/suggestions/:id/permanent', verifyAdminPassword, async (req, res) => {
-  try {
-    const suggestion = await Suggestion.findByIdAndDelete(req.params.id);
     
-    if (!suggestion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Suggestion not found'
-      });
-    }
-
     res.json({
       success: true,
-      message: 'Suggestion permanently deleted'
-    });
-  } catch (error) {
-    console.error('Error permanently deleting:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error permanently deleting suggestion',
-      error: error.message
-    });
-  }
-});
-
-// DELETE /api/admin/trash/empty - Empty trash
-router.delete('/trash/empty', verifyAdminPassword, async (req, res) => {
-  try {
-    const result = await Suggestion.deleteMany({ isDeleted: true });
-
-    res.json({
-      success: true,
-      message: `Permanently deleted ${result.deletedCount} suggestions`,
+      message: `Cleaned up ${result.deletedCount} old activity logs`,
       deletedCount: result.deletedCount
     });
   } catch (error) {
-    console.error('Error emptying trash:', error);
+    console.error('Error cleaning up activity logs:', error);
     res.status(500).json({
       success: false,
-      message: 'Error emptying trash',
+      message: 'Error cleaning up activity logs',
       error: error.message
     });
   }

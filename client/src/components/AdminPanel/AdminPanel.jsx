@@ -97,6 +97,30 @@ function AdminPanel() {
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
+  // Admin info (role, label, color)
+  const [adminInfo, setAdminInfo] = useState(null);
+  
+  // Online admins state
+  const [onlineAdmins, setOnlineAdmins] = useState([]);
+  
+  // Activity logs state
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [activityStats, setActivityStats] = useState(null);
+  const [activityFilters, setActivityFilters] = useState({
+    adminRole: 'all',
+    action: 'all',
+    datePreset: 'all',
+    dateFrom: '',
+    dateTo: '',
+    search: ''
+  });
+  const [activityPagination, setActivityPagination] = useState({ page: 1, pages: 1, total: 0, limit: 50 });
+  const [activityDateDropdownOpen, setActivityDateDropdownOpen] = useState(false);
+  const [activityDateModalOpen, setActivityDateModalOpen] = useState(false);
+  const [activityTempDateFrom, setActivityTempDateFrom] = useState('');
+  const [activityTempDateTo, setActivityTempDateTo] = useState('');
+  const [activitySearchExpanded, setActivitySearchExpanded] = useState(false);
+  
   // Dashboard state
   const [suggestions, setSuggestions] = useState([]);
   const [stats, setStats] = useState(null);
@@ -199,8 +223,12 @@ function AdminPanel() {
   // Check if already authenticated (session storage)
   useEffect(() => {
     const savedPassword = sessionStorage.getItem('adminPassword');
+    const savedAdminInfo = sessionStorage.getItem('adminInfo');
     if (savedPassword) {
       setPassword(savedPassword);
+      if (savedAdminInfo) {
+        setAdminInfo(JSON.parse(savedAdminInfo));
+      }
       setIsAuthenticated(true);
     }
   }, []);
@@ -210,12 +238,55 @@ function AdminPanel() {
     if (isAuthenticated) {
       fetchStats();
       fetchSuggestions();
+      fetchOnlineAdmins();
     }
   }, [isAuthenticated, filters, pagination.page]);
 
-  // Close mobile sidebar when tab changes
+  // Heartbeat and online admins polling - 5 second intervals for real-time feel
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    // Send heartbeat every 5 seconds for real-time online status
+    const heartbeatInterval = setInterval(() => {
+      fetch(`${API_URL}/api/admin/heartbeat`, {
+        method: 'POST',
+        headers: { 'x-admin-password': password }
+      }).catch(err => console.error('Heartbeat error:', err));
+    }, 5000);
+    
+    // Fetch online admins every 5 seconds for real-time updates
+    const onlineInterval = setInterval(() => {
+      fetchOnlineAdmins();
+    }, 5000);
+    
+    // Initial heartbeat
+    fetch(`${API_URL}/api/admin/heartbeat`, {
+      method: 'POST',
+      headers: { 'x-admin-password': password }
+    }).catch(err => console.error('Heartbeat error:', err));
+    
+    return () => {
+      clearInterval(heartbeatInterval);
+      clearInterval(onlineInterval);
+    };
+  }, [isAuthenticated, password]);
+
+  // Fetch activity logs when on activity tab
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'activity') {
+      fetchActivityLogs();
+      fetchActivityStats();
+    }
+  }, [isAuthenticated, activeTab, activityFilters, activityPagination.page]);
+
+  // Close mobile sidebar and all dropdowns when tab changes
   useEffect(() => {
     setMobileSidebarOpen(false);
+    // Close all dropdowns from Suggestions panel
+    closeAllDropdowns();
+    // Close Activity panel dropdowns
+    setActivityDateDropdownOpen(false);
+    setActivitySearchExpanded(false);
   }, [activeTab]);
 
   const handleClose = () => {
@@ -261,6 +332,14 @@ function AdminPanel() {
       const data = await res.json();
       if (data.success) {
         sessionStorage.setItem('adminPassword', password);
+        if (data.admin) {
+          sessionStorage.setItem('adminInfo', JSON.stringify(data.admin));
+          setAdminInfo(data.admin);
+          // Show welcome notification after a brief delay to ensure UI is ready
+          setTimeout(() => {
+            showNotification(`Welcome, ${data.admin.label}! 👋`, 'welcome');
+          }, 300);
+        }
         setIsAuthenticated(true);
       } else {
         setLoginError('Invalid password');
@@ -269,6 +348,57 @@ function AdminPanel() {
       setLoginError('Connection error. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fetch activity logs
+  const fetchActivityLogs = async () => {
+    try {
+      // Get date range from preset or custom dates
+      let dateFrom = activityFilters.dateFrom;
+      let dateTo = activityFilters.dateTo;
+      
+      if (activityFilters.datePreset !== 'all' && activityFilters.datePreset !== 'custom') {
+        const range = getDateRange(activityFilters.datePreset);
+        dateFrom = range.from;
+        dateTo = range.to;
+      }
+      
+      const params = new URLSearchParams({
+        page: activityPagination.page,
+        limit: activityPagination.limit,
+        ...(activityFilters.adminRole !== 'all' && { adminRole: activityFilters.adminRole }),
+        ...(activityFilters.action !== 'all' && { action: activityFilters.action }),
+        ...(activityFilters.search && { search: activityFilters.search }),
+        ...(dateFrom && { dateFrom }),
+        ...(dateTo && { dateTo })
+      });
+
+      const res = await fetch(`${API_URL}/api/admin/activity-logs?${params}`, {
+        headers: { 'x-admin-password': password }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActivityLogs(data.data);
+        setActivityPagination(prev => ({ ...prev, ...data.pagination }));
+      }
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+    }
+  };
+
+  // Fetch activity stats
+  const fetchActivityStats = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/activity-logs/stats`, {
+        headers: { 'x-admin-password': password }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActivityStats(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching activity stats:', error);
     }
   };
 
@@ -281,6 +411,18 @@ function AdminPanel() {
       if (data.success) setStats(data.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchOnlineAdmins = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/online`, {
+        headers: { 'x-admin-password': password }
+      });
+      const data = await res.json();
+      if (data.success) setOnlineAdmins(data.data);
+    } catch (error) {
+      console.error('Error fetching online admins:', error);
     }
   };
 
@@ -339,8 +481,11 @@ function AdminPanel() {
         setSelectedSuggestion(data.data);
         fetchSuggestions();
         fetchStats();
+      } else {
+        showNotification(data.message || 'Error archiving suggestion', 'error');
       }
     } catch (error) {
+      console.error('Archive error:', error);
       showNotification('Error archiving suggestion', 'error');
     }
   };
@@ -416,8 +561,11 @@ function AdminPanel() {
           fetchSuggestions();
         }
         fetchStats();
+      } else {
+        showNotification(data.message || 'Error deleting suggestion', 'error');
       }
     } catch (error) {
+      console.error('Delete error:', error);
       showNotification('Error deleting suggestion', 'error');
     }
   };
@@ -476,10 +624,22 @@ function AdminPanel() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Log logout activity
+    try {
+      await fetch(`${API_URL}/api/admin/logout`, {
+        method: 'POST',
+        headers: { 'x-admin-password': password }
+      });
+    } catch (error) {
+      console.error('Error logging logout:', error);
+    }
+    
     sessionStorage.removeItem('adminPassword');
+    sessionStorage.removeItem('adminInfo');
     setIsAuthenticated(false);
     setPassword('');
+    setAdminInfo(null);
   };
 
   const formatDate = (date) => {
@@ -491,6 +651,37 @@ function AdminPanel() {
 
   const getStatusInfo = (status) => STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
   const getPriorityInfo = (priority) => PRIORITY_OPTIONS.find(p => p.value === priority) || PRIORITY_OPTIONS[1];
+
+  // Helper to get admin color by role (simplified roles)
+  const getAdminColor = (role) => {
+    const colors = {
+      'executive': '#8b5cf6',
+      'press_secretary': '#f59e0b',
+      'network_secretary': '#10b981',
+      'developer': '#6366f1'
+    };
+    return colors[role] || '#6b7280';
+  };
+
+  // Helper to format action names
+  const formatAction = (action) => {
+    const actionLabels = {
+      'login': 'logged in',
+      'logout': 'logged out',
+      'view_suggestion': 'viewed suggestion',
+      'update_status': 'updated status',
+      'update_priority': 'updated priority',
+      'archive_suggestion': 'archived suggestion',
+      'unarchive_suggestion': 'unarchived suggestion',
+      'delete_suggestion': 'deleted suggestion',
+      'bulk_delete': 'bulk deleted suggestions',
+      'restore_suggestion': 'restored suggestion',
+      'permanent_delete': 'permanently deleted',
+      'empty_trash': 'emptied trash',
+      'mark_read': 'marked as read'
+    };
+    return actionLabels[action] || action;
+  };
 
   // Login Screen
   if (!isAuthenticated) {
@@ -1020,7 +1211,39 @@ function AdminPanel() {
                 </>
               )}
             </button>
+            
+            <button 
+              className={`nav-item ${activeTab === 'activity' ? 'active' : ''}`}
+              onClick={() => setActiveTab('activity')}
+              title="Activity Logs"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+              </svg>
+              {!sidebarCollapsed && <span>Activity Logs</span>}
+            </button>
           </nav>
+
+          {/* Online Admins Section */}
+          {!sidebarCollapsed && onlineAdmins.length > 0 && (
+            <div className="online-admins-section">
+              <div className="online-header">
+                <span className="online-dot"></span>
+                <span className="online-title">Online Now ({onlineAdmins.length})</span>
+              </div>
+              <div className="online-list">
+                {onlineAdmins.map(admin => (
+                  <div key={admin.role} className="online-admin-item">
+                    <div className="online-avatar" style={{ background: admin.color }}>
+                      {admin.label.charAt(0)}
+                    </div>
+                    <span className="online-name">{admin.label}</span>
+                    {admin.role === adminInfo?.role && <span className="you-badge">You</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="sidebar-footer">
             {/* Theme Toggle - Simplified for collapsed/mobile */}
@@ -1041,13 +1264,6 @@ function AdminPanel() {
                 )}
               </span>
               {!sidebarCollapsed && <span className="toggle-label">{darkMode ? 'Dark' : 'Light'}</span>}
-            </button>
-            
-            <button className="nav-item" onClick={handleClose} title="Back to Site">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-              </svg>
-              {!sidebarCollapsed && <span>Back to Site</span>}
             </button>
             
             <button className="nav-item logout" onClick={handleLogout} title="Logout">
@@ -2029,6 +2245,518 @@ function AdminPanel() {
                   </>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Activity Logs Tab */}
+          {activeTab === 'activity' && (
+            <div className="activity-content">
+              <div className="content-header">
+                <h2>Activity Logs</h2>
+                <div className="header-actions">
+                  {adminInfo?.role === 'developer' && (
+                    <button 
+                      className="cleanup-btn" 
+                      onClick={async () => {
+                        if (window.confirm('This will remove old activity logs with deprecated role names. Continue?')) {
+                          try {
+                            const res = await fetch(`${API_URL}/api/admin/activity-logs/cleanup`, {
+                              method: 'DELETE',
+                              headers: { 'x-admin-password': password }
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              showNotification(data.message);
+                              fetchActivityLogs();
+                              fetchActivityStats();
+                            } else {
+                              showNotification(data.message, 'error');
+                            }
+                          } catch (error) {
+                            showNotification('Error cleaning up logs', 'error');
+                          }
+                        }
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                      </svg>
+                      Cleanup Old Logs
+                    </button>
+                  )}
+                  <button className="refresh-btn" onClick={() => { fetchActivityLogs(); fetchActivityStats(); }}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Activity Stats Row */}
+              {activityStats && (
+                <div className="activity-stats-row">
+                  <div className="activity-stat-card compact">
+                    <div className="stat-icon total">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                      </svg>
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-value">{activityStats.totalLogs}</span>
+                      <span className="stat-label">Total</span>
+                    </div>
+                  </div>
+                  <div className="activity-stat-card compact">
+                    <div className="stat-icon today">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/>
+                      </svg>
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-value">{activityStats.todayCount}</span>
+                      <span className="stat-label">Today</span>
+                    </div>
+                  </div>
+                  <div className="activity-stat-card compact">
+                    <div className="stat-icon week">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                      </svg>
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-value">{activityStats.weekCount}</span>
+                      <span className="stat-label">This Week</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Activity Breakdown */}
+              {activityStats && activityStats.byAdmin && activityStats.byAdmin.length > 0 && (
+                <div className="admin-breakdown">
+                  <h3 className="breakdown-title">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                    Activity by Admin
+                  </h3>
+                  <div className="breakdown-cards">
+                    {activityStats.byAdmin.map(admin => (
+                      <div 
+                        key={admin._id} 
+                        className={`breakdown-card ${activityFilters.adminRole === admin._id ? 'active' : ''}`}
+                        onClick={() => setActivityFilters(prev => ({ 
+                          ...prev, 
+                          adminRole: prev.adminRole === admin._id ? 'all' : admin._id 
+                        }))}
+                        style={{ '--admin-color': getAdminColor(admin._id) }}
+                      >
+                        <div className="breakdown-avatar" style={{ background: getAdminColor(admin._id) }}>
+                          {admin.label ? admin.label.charAt(0) : admin._id.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="breakdown-info">
+                          <span className="breakdown-name">{admin.label || admin._id}</span>
+                          <span className="breakdown-count">{admin.count} actions</span>
+                        </div>
+                        <div className="breakdown-bar">
+                          <div 
+                            className="breakdown-fill" 
+                            style={{ 
+                              width: `${(admin.count / activityStats.totalLogs) * 100}%`,
+                              background: getAdminColor(admin._id)
+                            }} 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Activity Filters */}
+              <div className="activity-filters">
+                {/* Search Input */}
+                <div className={`search-input-wrapper ${activitySearchExpanded ? 'expanded' : ''}`}>
+                  <button 
+                    className="search-toggle"
+                    onClick={() => setActivitySearchExpanded(!activitySearchExpanded)}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="Search tracking code or title..."
+                    value={activityFilters.search}
+                    onChange={(e) => setActivityFilters(prev => ({ ...prev, search: e.target.value }))}
+                    onBlur={() => !activityFilters.search && setActivitySearchExpanded(false)}
+                  />
+                  {activityFilters.search && (
+                    <button 
+                      className="search-clear"
+                      onClick={() => {
+                        setActivityFilters(prev => ({ ...prev, search: '' }));
+                        setActivitySearchExpanded(false);
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                <div className="filter-group">
+                  <select 
+                    value={activityFilters.adminRole}
+                    onChange={(e) => setActivityFilters(prev => ({ ...prev, adminRole: e.target.value }))}
+                    className="activity-filter-select"
+                  >
+                    <option value="all">All Admins</option>
+                    <option value="executive">Executive</option>
+                    <option value="press_secretary">Press Secretary</option>
+                    <option value="network_secretary">Secretary on Networks</option>
+                    <option value="developer">Developer</option>
+                  </select>
+                  
+                  <select 
+                    value={activityFilters.action}
+                    onChange={(e) => setActivityFilters(prev => ({ ...prev, action: e.target.value }))}
+                    className="activity-filter-select"
+                  >
+                    <option value="all">All Actions</option>
+                    <option value="login">Login</option>
+                    <option value="logout">Logout</option>
+                    <option value="view_suggestion">View Suggestion</option>
+                    <option value="update_status">Update Status</option>
+                    <option value="update_priority">Update Priority</option>
+                    <option value="archive_suggestion">Archive</option>
+                    <option value="unarchive_suggestion">Unarchive</option>
+                    <option value="delete_suggestion">Delete</option>
+                    <option value="bulk_delete">Bulk Delete</option>
+                    <option value="mark_read">Mark Read</option>
+                  </select>
+                  
+                  {/* Date Preset Dropdown */}
+                  <div className={`custom-select date-select ${activityDateDropdownOpen ? 'open' : ''} ${activityFilters.datePreset === 'custom' ? 'has-custom-range' : ''}`}>
+                    <div 
+                      className="select-trigger"
+                      onClick={() => setActivityDateDropdownOpen(!activityDateDropdownOpen)}
+                    >
+                      <span className="select-icon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                          <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/>
+                        </svg>
+                      </span>
+                      <span className="select-value">
+                        {activityFilters.datePreset === 'custom' && activityFilters.dateFrom && activityFilters.dateTo
+                          ? `${new Date(activityFilters.dateFrom).toLocaleDateString()} - ${new Date(activityFilters.dateTo).toLocaleDateString()}`
+                          : DATE_PRESETS.find(d => d.value === activityFilters.datePreset)?.label || 'All Time'}
+                      </span>
+                      <span className="select-arrow">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M7 10l5 5 5-5z"/>
+                        </svg>
+                      </span>
+                    </div>
+                    {activityDateDropdownOpen && (
+                      <>
+                        <div className="dropdown-backdrop" onClick={() => setActivityDateDropdownOpen(false)} />
+                        <div className="select-options date-options">
+                          {DATE_PRESETS.map(preset => (
+                            <div
+                              key={preset.value}
+                              className={`date-option ${activityFilters.datePreset === preset.value ? 'selected' : ''} ${preset.value === 'custom' ? 'custom-option' : ''}`}
+                              onClick={() => {
+                                if (preset.value === 'custom') {
+                                  setActivityTempDateFrom(activityFilters.dateFrom);
+                                  setActivityTempDateTo(activityFilters.dateTo);
+                                  setActivityDateModalOpen(true);
+                                } else {
+                                  setActivityFilters(prev => ({ ...prev, datePreset: preset.value, dateFrom: '', dateTo: '' }));
+                                }
+                                setActivityDateDropdownOpen(false);
+                              }}
+                            >
+                              <div className="date-option-icon">
+                                {preset.icon === 'infinity' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.6 6.62c-1.44 0-2.8.56-3.77 1.53L12 10.66 10.48 12h.01L7.8 14.39c-.64.64-1.49.99-2.4.99-1.87 0-3.39-1.51-3.39-3.38S3.53 8.62 5.4 8.62c.91 0 1.76.35 2.44 1.03l1.13 1 1.51-1.34L9.22 8.2A5.37 5.37 0 005.4 6.62C2.42 6.62 0 9.04 0 12s2.42 5.38 5.4 5.38c1.44 0 2.8-.56 3.77-1.53l2.83-2.5.01.01L13.52 12h-.01l2.69-2.39c.64-.64 1.49-.99 2.4-.99 1.87 0 3.39 1.51 3.39 3.38s-1.52 3.38-3.39 3.38c-.9 0-1.76-.35-2.44-1.03l-1.14-1.01-1.51 1.34 1.27 1.12a5.386 5.386 0 003.82 1.57c2.98 0 5.4-2.41 5.4-5.38s-2.42-5.37-5.4-5.37z"/></svg>}
+                                {preset.icon === 'sun' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>}
+                                {preset.icon === 'clock' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>}
+                                {preset.icon === 'week' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>}
+                                {preset.icon === 'calendar' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>}
+                                {preset.icon === 'quarter' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg>}
+                                {preset.icon === 'year' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>}
+                                {preset.icon === 'custom' && <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm-4.5-7.5l-5 5-2.5-2.5 1.41-1.41 1.09 1.09 3.59-3.59 1.41 1.41z"/></svg>}
+                              </div>
+                              <div className="date-option-content">
+                                <span className="date-option-label">{preset.label}</span>
+                                <span className="date-option-desc">{preset.desc}</span>
+                              </div>
+                              {activityFilters.datePreset === preset.value && (
+                                <div className="date-option-check">
+                                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity Date Range Modal */}
+              {activityDateModalOpen && (
+                <>
+                  <div className="date-modal-overlay" onClick={() => setActivityDateModalOpen(false)} />
+                  <div className="date-range-modal">
+                    <div className="date-modal-header">
+                      <h3>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                          <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                        </svg>
+                        Select Date Range
+                      </h3>
+                      <button className="close-modal-btn" onClick={() => setActivityDateModalOpen(false)}>
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <div className="date-modal-body">
+                      <div className="date-range-visual">
+                        <div className={`date-picker-card ${activityTempDateFrom ? 'has-date' : ''}`}>
+                          <div className="date-card-header">
+                            <span className="date-label">FROM</span>
+                          </div>
+                          <input 
+                            type="date" 
+                            value={activityTempDateFrom}
+                            onChange={(e) => setActivityTempDateFrom(e.target.value)}
+                            max={activityTempDateTo || undefined}
+                          />
+                          <div className="date-preview">
+                            {activityTempDateFrom ? (
+                              <>
+                                <span className="day">{new Date(activityTempDateFrom + 'T00:00:00').getDate()}</span>
+                                <span className="month-year">
+                                  {new Date(activityTempDateFrom + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="placeholder">Select start</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="date-connection">
+                          <div className="connection-line">
+                            <div className={`line-fill ${activityTempDateFrom && activityTempDateTo ? 'active' : ''}`} />
+                          </div>
+                          <div className={`connection-icon ${activityTempDateFrom && activityTempDateTo ? 'active' : ''}`}>
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                              <path d="M16.01 11H4v2h12.01v3L20 12l-3.99-4z"/>
+                            </svg>
+                          </div>
+                          {activityTempDateFrom && activityTempDateTo && (
+                            <div className="days-between">
+                              {Math.ceil((new Date(activityTempDateTo) - new Date(activityTempDateFrom)) / (1000 * 60 * 60 * 24))} days
+                            </div>
+                          )}
+                        </div>
+
+                        <div className={`date-picker-card ${activityTempDateTo ? 'has-date' : ''}`}>
+                          <div className="date-card-header">
+                            <span className="date-label">TO</span>
+                          </div>
+                          <input 
+                            type="date" 
+                            value={activityTempDateTo}
+                            onChange={(e) => setActivityTempDateTo(e.target.value)}
+                            min={activityTempDateFrom || undefined}
+                          />
+                          <div className="date-preview">
+                            {activityTempDateTo ? (
+                              <>
+                                <span className="day">{new Date(activityTempDateTo + 'T00:00:00').getDate()}</span>
+                                <span className="month-year">
+                                  {new Date(activityTempDateTo + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="placeholder">Select end</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="quick-presets">
+                        <span className="presets-label">Quick select:</span>
+                        <div className="preset-buttons">
+                          {[
+                            { label: 'Last 7 days', days: 7 },
+                            { label: 'Last 30 days', days: 30 },
+                            { label: 'Last 90 days', days: 90 },
+                            { label: 'This year', days: 'year' }
+                          ].map(preset => (
+                            <button 
+                              key={preset.label}
+                              className="preset-btn"
+                              onClick={() => {
+                                const to = new Date();
+                                const from = new Date();
+                                if (preset.days === 'year') {
+                                  from.setMonth(0, 1);
+                                } else {
+                                  from.setDate(from.getDate() - preset.days);
+                                }
+                                setActivityTempDateFrom(from.toISOString().split('T')[0]);
+                                setActivityTempDateTo(to.toISOString().split('T')[0]);
+                              }}
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="date-modal-footer">
+                      <button 
+                        className="clear-btn"
+                        onClick={() => {
+                          setActivityTempDateFrom('');
+                          setActivityTempDateTo('');
+                        }}
+                      >
+                        Clear
+                      </button>
+                      <button 
+                        className="apply-btn"
+                        disabled={!activityTempDateFrom && !activityTempDateTo}
+                        onClick={() => {
+                          setActivityFilters(prev => ({
+                            ...prev,
+                            datePreset: 'custom',
+                            dateFrom: activityTempDateFrom,
+                            dateTo: activityTempDateTo
+                          }));
+                          setActivityDateModalOpen(false);
+                        }}
+                      >
+                        Apply Range
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Timeline View */}
+              <div className="activity-timeline">
+                {activityLogs.length === 0 ? (
+                  <div className="empty-logs">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+                      <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                    </svg>
+                    <p>No activity logs found</p>
+                  </div>
+                ) : (
+                  <div className="timeline-container">
+                    {activityLogs.map((log, index) => (
+                      <div key={log._id} className="timeline-item" style={{ '--delay': `${index * 0.05}s` }}>
+                        <div className="timeline-line">
+                          <div className="timeline-dot" style={{ background: getAdminColor(log.adminRole) }}>
+                            <div className="dot-pulse" style={{ background: getAdminColor(log.adminRole) }} />
+                          </div>
+                        </div>
+                        <div className="timeline-content">
+                          <div className="timeline-card">
+                            <div className="timeline-header">
+                              <div className="timeline-avatar" style={{ background: getAdminColor(log.adminRole) }}>
+                                {log.adminLabel.charAt(0)}
+                              </div>
+                              <div className="timeline-meta">
+                                <span className="timeline-admin" style={{ color: getAdminColor(log.adminRole) }}>
+                                  {log.adminLabel}
+                                </span>
+                                <span className="timeline-action">{formatAction(log.action)}</span>
+                              </div>
+                              <span className="timeline-time">{formatDate(log.createdAt)}</span>
+                            </div>
+                            {(log.suggestionTrackingCode || (log.details && Object.keys(log.details).length > 0)) && (
+                              <div className="timeline-body">
+                                {log.suggestionTrackingCode && (
+                                  <div className="timeline-target">
+                                    <span className="tracking-code">{log.suggestionTrackingCode}</span>
+                                    {log.suggestionTitle && (
+                                      <span className="suggestion-title">{log.suggestionTitle}</span>
+                                    )}
+                                  </div>
+                                )}
+                                {log.details && Object.keys(log.details).length > 0 && (
+                                  <div className="timeline-details">
+                                    {log.details.oldStatus && log.details.newStatus && (
+                                      <span className="detail-badge status">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                        </svg>
+                                        {log.details.oldStatus} → {log.details.newStatus}
+                                      </span>
+                                    )}
+                                    {log.details.oldPriority && log.details.newPriority && (
+                                      <span className="detail-badge priority">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                          <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/>
+                                        </svg>
+                                        {log.details.oldPriority} → {log.details.newPriority}
+                                      </span>
+                                    )}
+                                    {log.details.count && (
+                                      <span className="detail-badge bulk">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                        </svg>
+                                        {log.details.count} items
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Activity Pagination */}
+              {activityPagination.pages > 1 && (
+                <div className="pagination">
+                  <button
+                    disabled={activityPagination.page === 1}
+                    onClick={() => setActivityPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                  >
+                    ← Prev
+                  </button>
+                  <span className="page-info">
+                    Page {activityPagination.page} of {activityPagination.pages}
+                  </span>
+                  <button
+                    disabled={activityPagination.page === activityPagination.pages}
+                    onClick={() => setActivityPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </main>

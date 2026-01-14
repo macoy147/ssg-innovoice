@@ -82,7 +82,8 @@ const suggestionSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     },
-    notes: String
+    notes: String,
+    changedBy: String
   }],
   isRead: {
     type: Boolean,
@@ -91,12 +92,18 @@ const suggestionSchema = new mongoose.Schema({
   readAt: {
     type: Date
   },
+  readBy: {
+    type: String
+  },
   isArchived: {
     type: Boolean,
     default: false
   },
   archivedAt: {
     type: Date
+  },
+  archivedBy: {
+    type: String
   },
   isDeleted: {
     type: Boolean,
