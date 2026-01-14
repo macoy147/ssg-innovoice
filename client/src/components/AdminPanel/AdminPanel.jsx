@@ -745,6 +745,7 @@ function AdminPanel() {
     const actionLabels = {
       'login': 'logged in',
       'logout': 'logged out',
+      'session_ended': 'session ended (tab closed)',
       'view_suggestion': 'viewed suggestion',
       'update_status': 'updated status',
       'update_priority': 'updated priority',

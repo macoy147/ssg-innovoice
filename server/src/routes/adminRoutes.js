@@ -5,7 +5,7 @@ import ActivityLog from '../models/ActivityLog.js';
 const router = express.Router();
 
 // Admin accounts configuration
-// Note: President, VP, CoTE Gov, CoEd Gov all log as "executive" role for activity tracking
+// Note: President, VP, CoTE Gov, CoEd Gov, BSED-Math Rep all log as "executive" role for activity tracking
 const ADMIN_ACCOUNTS = {
   'ssg2526pres': {
     role: 'executive',
@@ -42,10 +42,15 @@ const ADMIN_ACCOUNTS = {
     label: 'Developer',
     color: '#6366f1'
   },
-  'ssg2526juls': {
+  'ssg2526mathrep': {
     role: 'executive',
-    label: 'Julianna',
+    label: 'BSED-Math Representative',
     color: '#f472b6'
+  },
+  'ssg2526smm': {
+    role: 'press_secretary',
+    label: 'Social Media Manager',
+    color: '#06b6d4'
   }
 };
 
@@ -151,10 +156,10 @@ router.post('/logout-beacon', async (req, res) => {
     // Remove from online admins by label
     onlineAdmins.delete(adminInfo.label);
     
-    // Log logout activity
+    // Log session ended activity (different from manual logout)
     await logActivity(
       { headers: { 'x-admin-password': password }, ip: req.ip, connection: req.connection },
-      'logout',
+      'session_ended',
       {}
     );
   }

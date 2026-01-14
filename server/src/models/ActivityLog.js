@@ -19,6 +19,7 @@ const activityLogSchema = new mongoose.Schema({
     enum: [
       'login',
       'logout',
+      'session_ended',
       'view_suggestion',
       'update_status',
       'update_priority',
