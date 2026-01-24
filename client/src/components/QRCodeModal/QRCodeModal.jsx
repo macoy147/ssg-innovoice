@@ -1,6 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QR_CONFIG } from '../../config/app';
+import { QR_CONFIG, APP_NAME } from '../../config/app';
 import './QRCodeModal.scss';
 
 function QRCodeModal({ isOpen, onClose, url, title, description }) {
@@ -40,10 +40,6 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
     };
     
     img.src = url;
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   return (
@@ -89,6 +85,12 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.3 }}
           >
+            {/* Print-only header */}
+            <div className="print-header">
+              <img src="/ctu_logo.jpg" alt="CTU Logo" className="print-logo" />
+              <h1 className="print-title">{APP_NAME}</h1>
+            </div>
+
             <div className="qr-code-container">
               <QRCodeSVG 
                 className="qr-code-svg"
@@ -98,6 +100,11 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
                 bgColor={QR_CONFIG.bgColor}
                 fgColor={QR_CONFIG.fgColor}
               />
+            </div>
+
+            {/* Print-only scan button */}
+            <div className="print-scan-button">
+              SCAN ME!
             </div>
 
             <div className="qr-info">
@@ -129,27 +136,6 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
               </svg>
               Download
             </motion.button>
-            <motion.button 
-              className="qr-action-btn print-btn" 
-              onClick={handlePrint}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-              </svg>
-              Print
-            </motion.button>
-            <motion.button 
-              className="qr-action-btn close-btn-footer" 
-              onClick={onClose}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              Close
-            </motion.button>
           </motion.div>
         </motion.div>
       </motion.div>
@@ -160,25 +146,105 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
           body * {
             visibility: hidden;
           }
+          .qr-modal-overlay {
+            visibility: visible;
+            position: fixed;
+            background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+          }
           .qr-modal-content,
           .qr-modal-content * {
             visibility: visible;
-          }
-          .qr-modal-overlay {
-            position: static;
-            background: white;
           }
           .qr-modal-content {
             position: static;
             box-shadow: none;
             max-width: 100%;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
           }
-          .qr-modal-header button,
-          .qr-modal-footer {
-            display: none;
+          .qr-modal-header,
+          .qr-modal-footer,
+          .qr-info {
+            display: none !important;
+          }
+          .qr-modal-body {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+          }
+          .print-header {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+          }
+          .print-logo {
+            display: block !important;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+          }
+          .print-title {
+            display: block !important;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0;
+            text-align: center;
           }
           .qr-code-container {
-            page-break-inside: avoid;
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+          }
+          .qr-code-svg {
+            width: 400px !important;
+            height: 400px !important;
+          }
+          .print-scan-button {
+            display: block !important;
+            background: rgba(255, 255, 255, 0.9);
+            color: #8B0000;
+            font-size: 36px;
+            font-weight: bold;
+            padding: 20px 60px;
+            border-radius: 50px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+          }
+          .qr-url {
+            display: block !important;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px 40px;
+            border-radius: 15px;
+            margin-top: 30px;
+          }
+          .qr-url .url-label {
+            display: inline !important;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-right: 10px;
+          }
+          .qr-url .url-text {
+            display: inline !important;
+            color: white;
+            font-size: 20px;
+            font-weight: 500;
           }
         }
       `}</style>

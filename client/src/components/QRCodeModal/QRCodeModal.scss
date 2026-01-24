@@ -68,6 +68,12 @@
   text-align: center;
 }
 
+// Hide print-only elements on screen
+.print-header,
+.print-scan-button {
+  display: none;
+}
+
 .qr-code-container {
   background: white;
   padding: 16px;
@@ -121,19 +127,22 @@
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
+  background: transparent;
 }
 
 .qr-action-btn {
-  padding: 9px 18px;
+  padding: 12px 32px;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  justify-content: center;
+  background: transparent;
 
   svg {
     flex-shrink: 0;
@@ -142,36 +151,11 @@
   &.download-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    border: none;
 
     &:hover {
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-  }
-
-  &.print-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-  }
-
-  &.close-btn-footer {
-    background: rgba(255, 255, 255, 0.05);
-    color: #888;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+      transform: translateY(-2px);
     }
 
     &:active {
@@ -199,12 +183,6 @@
   .qr-modal-header h2 {
     font-size: 18px;
   }
-
-  .qr-action-btn {
-    flex: 1;
-    min-width: 100px;
-    justify-content: center;
-  }
 }
 
 @media (max-width: 480px) {
@@ -224,66 +202,8 @@
     }
   }
 
-  .qr-modal-footer {
-    flex-direction: column;
-
-    .qr-action-btn {
-      width: 100%;
-    }
-  }
-}
-
-// Print styles
-@media print {
-  .qr-modal-overlay {
-    background: white;
-    position: static;
-  }
-
-  .qr-modal-content {
-    background: white;
-    box-shadow: none;
-    max-width: 100%;
-  }
-
-  .qr-modal-header {
-    border-bottom: 2px solid #000;
-
-    h2 {
-      color: #000;
-    }
-
-    .close-btn {
-      display: none;
-    }
-  }
-
-  .qr-modal-body {
-    padding: 40px 20px;
-  }
-
-  .qr-code-container {
-    box-shadow: none;
-    border: 2px solid #000;
-  }
-
-  .qr-info {
-    .qr-description {
-      color: #000;
-    }
-
-    .qr-url {
-      background: #f5f5f5;
-      border: 1px solid #ddd;
-
-      .url-label,
-      .url-text {
-        color: #000;
-      }
-    }
-  }
-
-  .qr-modal-footer {
-    display: none;
+  .qr-action-btn {
+    width: 100%;
+    padding: 12px 24px;
   }
 }
