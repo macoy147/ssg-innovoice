@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './SuggestionForm.scss';
 import TrackSuggestion from '../TrackSuggestion/TrackSuggestion';
+import QRCodeModal from '../QRCodeModal/QRCodeModal';
 import API_URL from '../../config/api';
 
 // Toast Notification Component - Chat Head Style
@@ -1051,50 +1052,10 @@ const SuggestionForm = () => {
       </AnimatePresence>
 
       {/* QR Code Share Modal */}
-      <AnimatePresence>
-        {isQRModalOpen && (
-          <motion.div 
-            className="qr-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsQRModalOpen(false)}
-          >
-            <motion.div 
-              className="qr-modal"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="qr-modal-header">
-                <div className="qr-modal-icon">📱</div>
-                <h2>Share SSG InnoVoice</h2>
-                <button 
-                  className="qr-modal-close"
-                  onClick={() => setIsQRModalOpen(false)}
-                  aria-label="Close"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="qr-modal-content">
-                <div className="qr-image-wrapper">
-                  <img src="/SSG nnoVoiceQR.png" alt="SSG InnoVoice QR Code" className="qr-image" />
-                </div>
-                <p className="qr-instruction">Scan this QR code to access SSG InnoVoice</p>
-              </div>
-
-              <div className="qr-modal-footer">
-                <p>Share with fellow students!</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <QRCodeModal 
+        isOpen={isQRModalOpen} 
+        onClose={() => setIsQRModalOpen(false)} 
+      />
     </div>
   );
 };
