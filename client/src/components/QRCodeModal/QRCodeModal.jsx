@@ -11,37 +11,6 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
   const qrTitle = title || QR_CONFIG.title;
   const qrDescription = description || QR_CONFIG.description;
 
-  const handleDownload = () => {
-    // Create a temporary canvas to convert SVG to PNG
-    const svg = document.querySelector('.qr-code-svg');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    // Get SVG data
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      
-      // Download as PNG
-      const pngUrl = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.href = pngUrl;
-      downloadLink.download = 'ssg-innovoice-qr.png';
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(url);
-    };
-    
-    img.src = url;
-  };
-
   return (
     <AnimatePresence>
       <motion.div 
@@ -96,9 +65,17 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
                 className="qr-code-svg"
                 value={qrUrl}
                 size={QR_CONFIG.size}
-                level={QR_CONFIG.level}
+                level="H"
                 bgColor={QR_CONFIG.bgColor}
                 fgColor={QR_CONFIG.fgColor}
+                imageSettings={{
+                  src: '/ssg-logo.png',
+                  x: undefined,
+                  y: undefined,
+                  height: 40,
+                  width: 40,
+                  excavate: true,
+                }}
               />
             </div>
 
@@ -116,26 +93,6 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
                 <span className="url-text">{qrUrl}</span>
               </div>
             </div>
-          </motion.div>
-
-          <motion.div 
-            className="qr-modal-footer"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-          >
-            <motion.button 
-              className="qr-action-btn download-btn" 
-              onClick={handleDownload}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-              </svg>
-              Download
-            </motion.button>
           </motion.div>
         </motion.div>
       </motion.div>
@@ -171,7 +128,6 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
             min-height: 100vh;
           }
           .qr-modal-header,
-          .qr-modal-footer,
           .qr-info {
             display: none !important;
           }
@@ -213,6 +169,10 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
           .qr-code-svg {
             width: 400px !important;
             height: 400px !important;
+          }
+          .qr-code-svg image {
+            width: 80px !important;
+            height: 80px !important;
           }
           .print-scan-button {
             display: block !important;

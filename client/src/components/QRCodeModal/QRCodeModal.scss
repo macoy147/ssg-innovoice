@@ -64,7 +64,7 @@
 }
 
 .qr-modal-body {
-  padding: 24px 20px;
+  padding: 24px 20px 28px;
   text-align: center;
 }
 
@@ -121,49 +121,6 @@
   }
 }
 
-.qr-modal-footer {
-  padding: 12px 20px 20px;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  background: transparent;
-}
-
-.qr-action-btn {
-  padding: 12px 32px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  background: transparent;
-
-  svg {
-    flex-shrink: 0;
-  }
-
-  &.download-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-
-    &:hover {
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
-      transform: translateY(-2px);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-  }
-}
-
 // Responsive
 @media (max-width: 768px) {
   .qr-modal-content {
@@ -191,7 +148,7 @@
   }
 
   .qr-modal-body {
-    padding: 20px 16px;
+    padding: 20px 16px 24px;
   }
 
   .qr-code-container {
@@ -200,10 +157,5 @@
     .qr-code-svg {
       max-width: 180px;
     }
-  }
-
-  .qr-action-btn {
-    width: 100%;
-    padding: 12px 24px;
   }
 }
