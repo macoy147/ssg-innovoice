@@ -8,6 +8,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import connectDB from './config/database.js';
 import suggestionRoutes from './routes/suggestionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import logger from './utils/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -117,13 +118,19 @@ app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  // Log error with full details
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
   
   // Don't leak error details in production
   res.status(err.status || 500).json({
     success: false,
     message: process.env.NODE_ENV === 'production' 
-      ? 'Something went wrong!' 
+      ? 'Something went wrong. Please try again later.' 
       : err.message
   });
 });
@@ -138,6 +145,6 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+  logger.info(`Server running on port ${PORT}`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

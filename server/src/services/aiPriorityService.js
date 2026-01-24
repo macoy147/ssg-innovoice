@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import logger from '../utils/logger.js';
 
 // Lazy initialization - will be set on first use
 let groq = null;
@@ -12,12 +13,9 @@ function initializeAI() {
   const groqKey = process.env.GROQ_API_KEY;
   geminiApiKey = process.env.GEMINI_API_KEY;
   
-  console.log('═══════════════════════════════════════════════════════');
-  console.log('🤖 AI PRIORITY SERVICE INITIALIZATION');
-  console.log('═══════════════════════════════════════════════════════');
-  console.log(`   Groq API Key: ${groqKey ? `${groqKey.substring(0, 10)}...*** (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
-  console.log(`   Gemini API Key: ${geminiApiKey ? `${geminiApiKey.substring(0, 10)}...*** (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
-  console.log('═══════════════════════════════════════════════════════');
+  logger.info('AI Priority Service Initialization');
+  logger.info(`Groq API Key: ${groqKey ? 'CONFIGURED' : 'NOT CONFIGURED'}`);
+  logger.info(`Gemini API Key: ${geminiApiKey ? 'CONFIGURED' : 'NOT CONFIGURED'}`);
   
   if (groqKey) {
     groq = new Groq({ apiKey: groqKey });
@@ -66,18 +64,11 @@ export async function analyzePriority(title, content, category) {
   // Initialize on first call (after dotenv has loaded)
   initializeAI();
   
-  console.log('');
-  console.log('╔═══════════════════════════════════════════════════════╗');
-  console.log('║          🤖 AI PRIORITY ANALYSIS STARTED              ║');
-  console.log('╠═══════════════════════════════════════════════════════╣');
-  console.log(`║ Category: ${category.padEnd(43)}║`);
-  console.log(`║ Title: ${title.substring(0, 45).padEnd(46)}║`);
-  console.log(`║ Content: ${content.substring(0, 43).padEnd(44)}...║`);
-  console.log('╚═══════════════════════════════════════════════════════╝');
+  logger.info('AI Priority Analysis Started', { category, title: title.substring(0, 50) });
   
   // If no AI configured at all, return default
   if (!groq && !geminiApiKey) {
-    console.log('⚠️  AI NOT AVAILABLE - No API keys configured');
+    logger.warn('AI not available - No API keys configured');
     return { priority: 'medium', reason: 'Default priority (AI not configured)', aiAnalyzed: false };
   }
 
@@ -169,7 +160,7 @@ Respond ONLY with this JSON:
   // Try Groq first (primary)
   if (groq) {
     try {
-      console.log('📤 Trying Groq AI (primary)...');
+      logger.debug('Trying Groq AI (primary)');
       const startTime = Date.now();
 
       const completion = await groq.chat.completions.create({
@@ -182,14 +173,14 @@ Respond ONLY with this JSON:
       const text = completion.choices[0]?.message?.content?.trim() || '';
       const elapsed = Date.now() - startTime;
       
-      console.log(`📥 Groq Response (${elapsed}ms): ${text.substring(0, 100)}...`);
+      logger.debug(`Groq response received in ${elapsed}ms`);
       
       const result = parseResponse(text);
-      console.log(`✅ Groq SUCCESS - Priority: ${result.priority.toUpperCase()}`);
+      logger.info('Groq AI analysis successful', { priority: result.priority });
       return result;
 
     } catch (error) {
-      console.error(`❌ Groq failed: ${error.message}`);
+      logger.error('Groq AI failed', { error: error.message });
       
       // Check if rate limited - try Gemini fallback
       const isRateLimited = error.message.includes('429') || 
@@ -197,7 +188,7 @@ Respond ONLY with this JSON:
                            error.message.includes('quota');
       
       if (isRateLimited) {
-        console.log('⚠️  Groq rate limited - switching to Gemini fallback...');
+        logger.warn('Groq rate limited - switching to Gemini fallback');
       }
     }
   }
@@ -205,30 +196,25 @@ Respond ONLY with this JSON:
   // Try Gemini as fallback
   if (geminiApiKey) {
     try {
-      console.log('📤 Trying Google Gemini (fallback)...');
+      logger.debug('Trying Google Gemini (fallback)');
       const startTime = Date.now();
 
       const text = await callGemini(prompt);
       const elapsed = Date.now() - startTime;
       
-      console.log(`📥 Gemini Response (${elapsed}ms): ${text.substring(0, 100)}...`);
+      logger.debug(`Gemini response received in ${elapsed}ms`);
       
       const result = parseResponse(text);
-      console.log(`✅ Gemini SUCCESS - Priority: ${result.priority.toUpperCase()}`);
+      logger.info('Gemini AI analysis successful', { priority: result.priority });
       return result;
 
     } catch (error) {
-      console.error(`❌ Gemini failed: ${error.message}`);
+      logger.error('Gemini AI failed', { error: error.message });
     }
   }
 
   // All AI services failed
-  console.error('');
-  console.error('╔═══════════════════════════════════════════════════════╗');
-  console.error('║          ❌ ALL AI SERVICES FAILED                    ║');
-  console.error('║          Returning default medium priority            ║');
-  console.error('╚═══════════════════════════════════════════════════════╝');
-  console.error('');
+  logger.error('All AI services failed - returning default priority');
   
   return { 
     priority: 'medium', 

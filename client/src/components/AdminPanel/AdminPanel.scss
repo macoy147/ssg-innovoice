@@ -2480,8 +2480,27 @@
   .card-footer {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 12px;
     color: #666;
+    
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .photo-indicator {
+      font-size: 14px;
+      opacity: 0.8;
+      cursor: help;
+      transition: all 0.2s;
+      
+      &:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+    }
   }
 }
 

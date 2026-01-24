@@ -2136,7 +2136,14 @@ function AdminPanel() {
                           </div>
                           <div className="card-footer">
                             <span className="date">{formatDate(suggestion.createdAt)}</span>
-                            <span className="anonymous">{suggestion.isAnonymous ? '👤 Anonymous' : '🎓 Identified'}</span>
+                            <div className="footer-right">
+                              {suggestion.imageUrl && (
+                                <span className="photo-indicator" title="Has photo evidence">
+                                  📷
+                                </span>
+                              )}
+                              <span className="anonymous">{suggestion.isAnonymous ? '👤 Anonymous' : '🎓 Identified'}</span>
+                            </div>
                           </div>
                         </div>
                       );

@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import logger from '../utils/logger.js';
 
 // Initialize Cloudinary
 let initialized = false;
@@ -11,11 +12,8 @@ function initializeCloudinary() {
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
   
-  console.log('═══════════════════════════════════════════════════════');
-  console.log('📷 IMAGE UPLOAD SERVICE INITIALIZATION (Cloudinary)');
-  console.log('═══════════════════════════════════════════════════════');
-  console.log(`   Cloud Name: ${cloudName ? `${cloudName} (CONFIGURED ✅)` : 'NOT CONFIGURED ❌'}`);
-  console.log('═══════════════════════════════════════════════════════');
+  logger.info('Image Upload Service Initialization (Cloudinary)');
+  logger.info(`Cloud Name: ${cloudName ? 'CONFIGURED' : 'NOT CONFIGURED'}`);
   
   if (cloudName && apiKey && apiSecret) {
     cloudinary.config({
@@ -35,31 +33,30 @@ export async function uploadImage(base64Image) {
   initializeCloudinary();
   
   if (!process.env.CLOUDINARY_CLOUD_NAME) {
-    console.log('⚠️  Image upload skipped - Cloudinary not configured');
+    logger.warn('Image upload skipped - Cloudinary not configured');
     return { success: false, error: 'Image upload not configured' };
   }
   
   try {
-    console.log('📤 Uploading image to Cloudinary...');
+    logger.debug('Uploading image to Cloudinary');
     const startTime = Date.now();
     
     const result = await cloudinary.uploader.upload(base64Image, {
       folder: 'ssg-innovoice',
       resource_type: 'image',
       transformation: [
-        { width: 1200, height: 1200, crop: 'limit' }, // Max dimensions
-        { quality: 'auto:good' }, // Auto optimize quality
-        { fetch_format: 'auto' } // Auto format (webp if supported)
+        { width: 1200, height: 1200, crop: 'limit' },
+        { quality: 'auto:good' },
+        { fetch_format: 'auto' }
       ]
     });
     
     const elapsed = Date.now() - startTime;
-    console.log(`✅ Image uploaded successfully (${elapsed}ms)`);
-    console.log(`   URL: ${result.secure_url}`);
+    logger.info(`Image uploaded successfully in ${elapsed}ms`, { url: result.secure_url });
     
     return { success: true, url: result.secure_url };
   } catch (error) {
-    console.error('❌ Image upload failed:', error.message);
+    logger.error('Image upload failed', { error: error.message });
     return { success: false, error: error.message };
   }
 }
