@@ -9,6 +9,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 html {
@@ -42,6 +46,10 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
   color: $color-black;
   margin-bottom: $spacing-4;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 h1 { font-size: $text-5xl; }
@@ -53,6 +61,10 @@ h6 { font-size: $text-lg; }
 
 p {
   margin-bottom: $spacing-4;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 a {
