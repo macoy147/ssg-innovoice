@@ -117,8 +117,10 @@ class AdminService {
 
   async logActivity(req, action, details = {}) {
     try {
-      const password = req.headers['x-admin-password'];
-      const adminInfo = this.getAdminInfo(password);
+      const adminInfo =
+        req.adminInfo ||
+        req.session?.admin ||
+        this.getAdminInfo(req.headers['x-admin-password']);
       
       if (!adminInfo) return;
       

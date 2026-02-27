@@ -31,6 +31,8 @@ import { verifyAdminPassword, requireDeveloperRole } from '../middleware/adminMi
 import logger from '../utils/logger.js';
 
 const router = express.Router();
+const SESSION_NAME = process.env.SESSION_NAME || 'innovoice.sid';
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 // POST /api/admin/verify - Verify admin password
 router.post(
@@ -43,18 +45,25 @@ router.post(
       const adminInfo = adminService.verifyPassword(dto.password);
       
       if (adminInfo) {
-        adminService.setAdminOnline(adminInfo);
-        
-        await adminService.logActivity(
-          { headers: { 'x-admin-password': dto.password }, ip: req.ip, connection: req.connection },
-          'login',
-          {}
-        );
-        
-        const responseDto = new AdminVerifyResponseDTO(adminInfo);
-        
-        res.json({ 
-          success: true, 
+        // Prevent session fixation: start a new session on login
+        await new Promise((resolve, reject) => {
+          req.session.regenerate((err) => (err ? reject(err) : resolve()));
+        });
+
+        req.session.admin = {
+          role: adminInfo.role,
+          label: adminInfo.label,
+          color: adminInfo.color
+        };
+        req.adminInfo = req.session.admin;
+
+        adminService.setAdminOnline(req.adminInfo);
+        await adminService.logActivity(req, 'login', {});
+
+        const responseDto = new AdminVerifyResponseDTO(req.adminInfo);
+
+        res.json({
+          success: true,
           message: 'Password verified',
           admin: responseDto
         });
@@ -74,13 +83,26 @@ router.post(
   }
 );
 
+// GET /api/admin/me - Validate session and return admin info
+router.get('/me', verifyAdminPassword, async (req, res) => {
+  const responseDto = new AdminVerifyResponseDTO(req.adminInfo);
+  res.json({ success: true, admin: responseDto });
+});
+
 // POST /api/admin/logout - Log logout activity
 router.post('/logout', verifyAdminPassword, async (req, res) => {
   try {
     adminService.setAdminOffline(req.adminInfo.label);
     await adminService.logActivity(req, 'logout', {});
-    
-    res.json({ success: true, message: 'Logged out successfully' });
+
+    if (req.session) {
+      req.session.destroy(() => {
+        res.clearCookie(SESSION_NAME, { sameSite: IS_PROD ? 'none' : 'lax', secure: IS_PROD });
+        res.json({ success: true, message: 'Logged out successfully' });
+      });
+    } else {
+      res.json({ success: true, message: 'Logged out successfully' });
+    }
   } catch (error) {
     logger.error('Error in logout endpoint', { error: error.message });
     res.status(500).json({
@@ -93,19 +115,32 @@ router.post('/logout', verifyAdminPassword, async (req, res) => {
 // POST /api/admin/logout-beacon - Handle logout when tab closes
 router.post('/logout-beacon', async (req, res) => {
   try {
+    // Prefer session-based logout beacon
+    if (req.session?.admin) {
+      req.adminInfo = req.session.admin;
+      adminService.setAdminOffline(req.adminInfo.label);
+      await adminService.logActivity(req, 'session_ended', {});
+
+      req.session.destroy(() => {
+        res.clearCookie(SESSION_NAME, { sameSite: IS_PROD ? 'none' : 'lax', secure: IS_PROD });
+        res.json({ success: true });
+      });
+      return;
+    }
+
+    // Backward-compatible fallback (older clients)
     const password = req.query.password;
     const adminInfo = adminService.getAdminInfo(password);
-    
+
     if (adminInfo) {
       adminService.setAdminOffline(adminInfo.label);
-      
       await adminService.logActivity(
         { headers: { 'x-admin-password': password }, ip: req.ip, connection: req.connection },
         'session_ended',
         {}
       );
     }
-    
+
     res.json({ success: true });
   } catch (error) {
     logger.error('Error in logout beacon endpoint', { error: error.message });
@@ -395,6 +430,7 @@ router.put(
 router.delete(
   '/suggestions/:id', 
   verifyAdminPassword, 
+  requireDeveloperRole,
   suggestionIdValidator, 
   handleValidationErrors, 
   async (req, res) => {
@@ -432,6 +468,7 @@ router.delete(
 router.post(
   '/suggestions/bulk-delete', 
   verifyAdminPassword, 
+  requireDeveloperRole,
   bulkDeleteValidator, 
   handleValidationErrors, 
   async (req, res) => {

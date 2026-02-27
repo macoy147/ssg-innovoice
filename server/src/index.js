@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import connectDB from './config/database.js';
 import suggestionRoutes from './routes/suggestionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -16,6 +18,8 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
+const IS_PROD = process.env.NODE_ENV === 'production';
+const SESSION_NAME = process.env.SESSION_NAME || 'innovoice.sid';
 
 // Trust proxy - required for Render/Heroku/etc behind reverse proxy
 app.set('trust proxy', 1);
@@ -48,7 +52,7 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 login attempts per windowMs
+  max: 5, // limit each IP to 5 login attempts per windowMs
   message: { success: false, message: 'Too many login attempts, please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -85,13 +89,37 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'x-admin-password']
+  allowedHeaders: ['Content-Type']
 }));
 
 // Logging (only in development)
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// Sessions (cookie-based admin auth)
+if (!process.env.SESSION_SECRET) {
+  logger.warn('SESSION_SECRET is not set. Sessions will be insecure.');
+}
+
+app.use(session({
+  name: SESSION_NAME,
+  secret: process.env.SESSION_SECRET || 'dev-insecure-secret',
+  resave: false,
+  saveUninitialized: false,
+  rolling: true,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: 'sessions',
+    ttl: 60 * 60 * 8 // 8 hours
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: IS_PROD,                 // required for SameSite=None in production
+    sameSite: IS_PROD ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 60 * 8       // 8 hours
+  }
+}));
 
 // Body parsing with size limits (increased for base64 image uploads)
 app.use(express.json({ limit: '5mb' })); // Increased for image uploads

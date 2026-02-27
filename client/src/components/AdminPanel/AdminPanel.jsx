@@ -221,7 +221,7 @@ function AdminPanel() {
       console.log('Sending mark as read request...');
       const res = await fetch(`${API_URL}/api/admin/suggestions/${suggestionId}/read`, {
         method: 'PUT',
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
       
       console.log('Response status:', res.status);
@@ -260,19 +260,34 @@ function AdminPanel() {
     return !isReadNormalized;
   };
 
-  // Generate unique session token on login, validate on page load
-  // sessionStorage automatically clears when tab is closed
   useEffect(() => {
-    const savedPassword = sessionStorage.getItem('adminPassword');
     const savedAdminInfo = sessionStorage.getItem('adminInfo');
-    
-    if (savedPassword) {
-      setPassword(savedPassword);
-      if (savedAdminInfo) {
+
+    // Hydrate UI quickly (not used as authentication)
+    if (savedAdminInfo) {
+      try {
         setAdminInfo(JSON.parse(savedAdminInfo));
+      } catch {
+        // ignore
       }
-      setIsAuthenticated(true);
     }
+
+    // Validate session cookie with the server
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/me`, { credentials: 'include' });
+        const data = await res.json();
+        if (data.success && data.admin) {
+          setAdminInfo(data.admin);
+          sessionStorage.setItem('adminInfo', JSON.stringify(data.admin));
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      }
+    })();
   }, []);
 
   // Fetch data when authenticated
@@ -301,7 +316,7 @@ function AdminPanel() {
         if (document.visibilityState === 'visible') {
           fetch(`${API_URL}/api/admin/heartbeat`, {
             method: 'POST',
-            headers: { 'x-admin-password': password }
+            credentials: 'include'
           }).catch(err => console.error('Heartbeat error:', err));
         }
       }, 30000);
@@ -319,7 +334,7 @@ function AdminPanel() {
         // Tab became visible - send immediate heartbeat and fetch online admins
         fetch(`${API_URL}/api/admin/heartbeat`, {
           method: 'POST',
-          headers: { 'x-admin-password': password }
+          credentials: 'include'
         }).catch(err => console.error('Heartbeat error:', err));
         fetchOnlineAdmins();
       }
@@ -330,7 +345,7 @@ function AdminPanel() {
       // Use sendBeacon for reliable delivery on page close
       const data = JSON.stringify({});
       navigator.sendBeacon(
-        `${API_URL}/api/admin/logout-beacon?password=${encodeURIComponent(password)}`,
+        `${API_URL}/api/admin/logout-beacon`,
         data
       );
     };
@@ -338,7 +353,7 @@ function AdminPanel() {
     // Initial heartbeat
     fetch(`${API_URL}/api/admin/heartbeat`, {
       method: 'POST',
-      headers: { 'x-admin-password': password }
+      credentials: 'include'
     }).catch(err => console.error('Heartbeat error:', err));
     
     // Start polling
@@ -410,14 +425,13 @@ function AdminPanel() {
     try {
       const res = await fetch(`${API_URL}/api/admin/verify`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
       });
 
       const data = await res.json();
       if (data.success) {
-        sessionStorage.setItem('adminPassword', password);
-        
         if (data.admin) {
           sessionStorage.setItem('adminInfo', JSON.stringify(data.admin));
           setAdminInfo(data.admin);
@@ -427,6 +441,7 @@ function AdminPanel() {
           }, 300);
         }
         setIsAuthenticated(true);
+        setPassword('');
       } else {
         setLoginError('Invalid password');
       }
@@ -461,7 +476,7 @@ function AdminPanel() {
       });
 
       const res = await fetch(`${API_URL}/api/admin/activity-logs?${params}`, {
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
       
       if (!res.ok) {
@@ -483,7 +498,7 @@ function AdminPanel() {
   const fetchActivityStats = async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/activity-logs/stats`, {
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
       
       if (!res.ok) {
@@ -502,7 +517,7 @@ function AdminPanel() {
   const fetchStats = async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/stats`, {
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
       
       if (!res.ok) {
@@ -519,7 +534,7 @@ function AdminPanel() {
   const fetchOnlineAdmins = async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/online`, {
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
       
       if (!res.ok) {
@@ -560,7 +575,7 @@ function AdminPanel() {
       });
 
       const res = await fetch(`${API_URL}/api/admin/suggestions?${params}`, {
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
       const data = await res.json();
       
@@ -579,7 +594,7 @@ function AdminPanel() {
     try {
       const res = await fetch(`${API_URL}/api/admin/suggestions/${id}/archive`, {
         method: 'PUT',
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
 
       const data = await res.json();
@@ -603,8 +618,8 @@ function AdminPanel() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': password
         },
+        credentials: 'include',
         body: JSON.stringify({ status, notes })
       });
 
@@ -628,8 +643,8 @@ function AdminPanel() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': password
         },
+        credentials: 'include',
         body: JSON.stringify({ priority })
       });
 
@@ -650,7 +665,7 @@ function AdminPanel() {
     try {
       const res = await fetch(`${API_URL}/api/admin/suggestions/${id}`, {
         method: 'DELETE',
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
 
       const data = await res.json();
@@ -706,7 +721,7 @@ function AdminPanel() {
       const deletePromises = selectedIds.map(id => 
         fetch(`${API_URL}/api/admin/suggestions/${id}`, {
           method: 'DELETE',
-          headers: { 'x-admin-password': password }
+          credentials: 'include'
         })
       );
       
@@ -736,14 +751,13 @@ function AdminPanel() {
     try {
       await fetch(`${API_URL}/api/admin/logout`, {
         method: 'POST',
-        headers: { 'x-admin-password': password }
+        credentials: 'include'
       });
     } catch (error) {
       console.error('Error logging logout:', error);
     }
     
     // Clear session data
-    sessionStorage.removeItem('adminPassword');
     sessionStorage.removeItem('adminInfo');
     setIsAuthenticated(false);
     setPassword('');
@@ -1330,7 +1344,7 @@ function AdminPanel() {
                       try {
                         const res = await fetch(`${API_URL}/api/admin/activity-logs/cleanup`, {
                           method: 'DELETE',
-                          headers: { 'x-admin-password': password }
+                          credentials: 'include'
                         });
                         const data = await res.json();
                         if (data.success) {
@@ -2518,7 +2532,7 @@ function AdminPanel() {
                         setDeprecatedLogsCount(null);
                         try {
                           const res = await fetch(`${API_URL}/api/admin/activity-logs/deprecated-count`, {
-                            headers: { 'x-admin-password': password }
+                            credentials: 'include'
                           });
                           const data = await res.json();
                           if (data.success) {

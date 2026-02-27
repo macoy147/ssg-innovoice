@@ -2,6 +2,12 @@ import adminService from '../services/adminService.js';
 import logger from '../utils/logger.js';
 
 export const verifyAdminPassword = (req, res, next) => {
+  // Prefer session-based auth
+  if (req.session?.admin) {
+    req.adminInfo = req.session.admin;
+    return next();
+  }
+
   const password = req.headers['x-admin-password'];
   
   if (!password) {
