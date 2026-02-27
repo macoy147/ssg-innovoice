@@ -200,23 +200,49 @@ function AdminPanel() {
   const markAsRead = async (suggestionId) => {
     // Find the suggestion and check if already read
     const suggestion = suggestions.find(s => s._id === suggestionId);
-    if (suggestion?.isRead) return;
+
+    const isReadNormalized =
+      suggestion &&
+      (suggestion.isRead === true || suggestion.isRead === 'true');
+
+    console.log('markAsRead called:', {
+      suggestionId,
+      currentIsRead: suggestion?.isRead,
+      trackingCode: suggestion?.trackingCode,
+      isReadNormalized,
+    });
+
+    if (isReadNormalized) {
+      console.log('Suggestion already marked as read, skipping');
+      return;
+    }
     
     try {
+      console.log('Sending mark as read request...');
       const res = await fetch(`${API_URL}/api/admin/suggestions/${suggestionId}/read`, {
         method: 'PUT',
         headers: { 'x-admin-password': password }
       });
       
+      console.log('Response status:', res.status);
+      
       if (res.ok) {
+        const data = await res.json();
+        console.log('Mark as read response:', data);
+        
         // Update local state immediately for responsiveness
         setSuggestions(prev => prev.map(s => 
-          s._id === suggestionId ? { ...s, isRead: true, readAt: new Date().toISOString() } : s
+          s._id === suggestionId ? { ...s, isRead: true, readAt: new Date().toISOString(), readBy: data.data?.readBy } : s
         ));
         // Update stats
         if (stats?.unreadCount > 0) {
           setStats(prev => ({ ...prev, unreadCount: prev.unreadCount - 1 }));
         }
+        
+        console.log('Local state updated successfully');
+      } else {
+        const error = await res.json();
+        console.error('Failed to mark as read:', error);
       }
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -226,7 +252,12 @@ function AdminPanel() {
   // Check if suggestion is unread
   const isUnread = (suggestionId) => {
     const suggestion = suggestions.find(s => s._id === suggestionId);
-    return suggestion ? suggestion.isRead !== true : false;
+    if (!suggestion) return false;
+
+    const isReadNormalized =
+      suggestion.isRead === true || suggestion.isRead === 'true';
+
+    return !isReadNormalized;
   };
 
   // Generate unique session token on login, validate on page load

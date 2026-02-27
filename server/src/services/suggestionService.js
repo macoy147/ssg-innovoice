@@ -2,6 +2,24 @@ import Suggestion from '../models/Suggestion.js';
 import logger from '../utils/logger.js';
 import { analyzePriority } from './aiPriorityService.js';
 import { uploadImage } from './imageUploadService.js';
+// #region agent log
+import fs from 'fs';
+import path from 'path';
+
+const DEBUG_LOG_PATH = path.join(process.cwd(), 'debug-cbd4a1.log');
+
+const writeDebugLog = (payload) => {
+  try {
+    fs.appendFile(
+      DEBUG_LOG_PATH,
+      JSON.stringify(payload) + '\n',
+      () => {}
+    );
+  } catch {
+    // Ignore logging errors
+  }
+};
+// #endregion agent log
 
 class SuggestionService {
   async createSuggestion(dto) {
@@ -269,19 +287,187 @@ class SuggestionService {
       const suggestion = await Suggestion.findById(id);
       
       if (!suggestion) {
+        // #region agent log
+        fetch('http://127.0.0.1:7403/ingest/9ef14a32-a866-46b1-8df0-ecf6671428fc', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': 'cbd4a1'
+          },
+          body: JSON.stringify({
+            sessionId: 'cbd4a1',
+            runId: 'initial',
+            hypothesisId: 'H-any',
+            location: 'suggestionService.js:markAsRead',
+            message: 'Suggestion not found when marking as read',
+            data: { id },
+            timestamp: Date.now()
+          })
+        }).catch(() => {});
+        // #endregion agent log
+
+        // #region agent log
+        writeDebugLog({
+          sessionId: 'cbd4a1',
+          runId: 'initial',
+          hypothesisId: 'H-any',
+          location: 'suggestionService.js:markAsRead',
+          message: 'Suggestion not found when marking as read',
+          data: { id },
+          timestamp: Date.now()
+        });
+        // #endregion agent log
         return null;
       }
 
-      if (!suggestion.isRead) {
+      // #region agent log
+      fetch('http://127.0.0.1:7403/ingest/9ef14a32-a866-46b1-8df0-ecf6671428fc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Debug-Session-Id': 'cbd4a1'
+        },
+        body: JSON.stringify({
+          sessionId: 'cbd4a1',
+          runId: 'initial',
+          hypothesisId: 'H1-H2',
+          location: 'suggestionService.js:markAsRead:before',
+          message: 'Before markAsRead condition',
+          data: {
+            id,
+            isReadValue: suggestion.isRead,
+            isReadType: typeof suggestion.isRead,
+            readAt: suggestion.readAt,
+            readBy: suggestion.readBy,
+            trackingCode: suggestion.trackingCode
+          },
+          timestamp: Date.now()
+        })
+      }).catch(() => {});
+      // #endregion agent log
+
+      // #region agent log
+      writeDebugLog({
+        sessionId: 'cbd4a1',
+        runId: 'initial',
+        hypothesisId: 'H1-H2',
+        location: 'suggestionService.js:markAsRead:before',
+        message: 'Before markAsRead condition',
+        data: {
+          id,
+          isReadValue: suggestion.isRead,
+          isReadType: typeof suggestion.isRead,
+          readAt: suggestion.readAt,
+          readBy: suggestion.readBy,
+          trackingCode: suggestion.trackingCode
+        },
+        timestamp: Date.now()
+      });
+      // #endregion agent log
+
+      // Normalize isRead to handle migrated string values like "false"/"true"
+      const isReadNormalized = suggestion.isRead === true || suggestion.isRead === 'true';
+
+      if (!isReadNormalized) {
         suggestion.isRead = true;
         suggestion.readAt = new Date();
         suggestion.readBy = adminInfo.label;
         await suggestion.save();
 
+        // #region agent log
+        fetch('http://127.0.0.1:7403/ingest/9ef14a32-a866-46b1-8df0-ecf6671428fc', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': 'cbd4a1'
+          },
+          body: JSON.stringify({
+            sessionId: 'cbd4a1',
+            runId: 'initial',
+            hypothesisId: 'H1',
+            location: 'suggestionService.js:markAsRead:after-save',
+            message: 'After saving markAsRead',
+            data: {
+              id,
+              isReadValue: suggestion.isRead,
+              isReadType: typeof suggestion.isRead,
+              readAt: suggestion.readAt,
+              readBy: suggestion.readBy,
+              trackingCode: suggestion.trackingCode
+            },
+            timestamp: Date.now()
+          })
+        }).catch(() => {});
+        // #endregion agent log
+
+        // #region agent log
+        writeDebugLog({
+          sessionId: 'cbd4a1',
+          runId: 'initial',
+          hypothesisId: 'H1',
+          location: 'suggestionService.js:markAsRead:after-save',
+          message: 'After saving markAsRead',
+          data: {
+            id,
+            isReadValue: suggestion.isRead,
+            isReadType: typeof suggestion.isRead,
+            readAt: suggestion.readAt,
+            readBy: suggestion.readBy,
+            trackingCode: suggestion.trackingCode
+          },
+          timestamp: Date.now()
+        });
+        // #endregion agent log
+
         logger.info('Suggestion marked as read', {
           suggestionId: id,
           readBy: adminInfo.label
         });
+      } else {
+        // #region agent log
+        fetch('http://127.0.0.1:7403/ingest/9ef14a32-a866-46b1-8df0-ecf6671428fc', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': 'cbd4a1'
+          },
+          body: JSON.stringify({
+            sessionId: 'cbd4a1',
+            runId: 'initial',
+            hypothesisId: 'H1',
+            location: 'suggestionService.js:markAsRead:skipped',
+            message: 'markAsRead skipped because suggestion.isRead is truthy',
+            data: {
+              id,
+              isReadValue: suggestion.isRead,
+              isReadType: typeof suggestion.isRead,
+              readAt: suggestion.readAt,
+              readBy: suggestion.readBy,
+              trackingCode: suggestion.trackingCode
+            },
+            timestamp: Date.now()
+          })
+        }).catch(() => {});
+        // #endregion agent log
+
+        // #region agent log
+        writeDebugLog({
+          sessionId: 'cbd4a1',
+          runId: 'initial',
+          hypothesisId: 'H1',
+          location: 'suggestionService.js:markAsRead:skipped',
+          message: 'markAsRead skipped because suggestion.isRead is truthy',
+          data: {
+            id,
+            isReadValue: suggestion.isRead,
+            isReadType: typeof suggestion.isRead,
+            readAt: suggestion.readAt,
+            readBy: suggestion.readBy,
+            trackingCode: suggestion.trackingCode
+          },
+          timestamp: Date.now()
+        });
+        // #endregion agent log
       }
 
       return suggestion;

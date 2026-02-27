@@ -9,6 +9,19 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+// Prevent text selection on UI elements
+button,
+.btn,
+[role="button"],
+label,
+.logo,
+nav,
+header,
+.card-header,
+.badge,
+.tag {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;

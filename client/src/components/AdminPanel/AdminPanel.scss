@@ -2387,6 +2387,10 @@
   transition: all 0.2s;
   border: 2px solid transparent;
   position: relative;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 
   &:hover { 
     background: #1e2a4a; 
