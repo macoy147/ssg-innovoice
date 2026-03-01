@@ -6,9 +6,9 @@ import { uploadImage } from './imageUploadService.js';
 class SuggestionService {
   async createSuggestion(dto) {
     try {
-      logger.info('Processing new suggestion submission', { 
-        category: dto.category, 
-        isAnonymous: dto.isAnonymous 
+      logger.info('Processing new suggestion submission', {
+        category: dto.category,
+        isAnonymous: dto.isAnonymous
       });
 
       // AI Priority Analysis
@@ -49,7 +49,7 @@ class SuggestionService {
       const suggestion = new Suggestion(suggestionData);
       await suggestion.save();
 
-      logger.info('Suggestion created successfully', { 
+      logger.info('Suggestion created successfully', {
         trackingCode: suggestion.trackingCode,
         priority: suggestion.priority
       });
@@ -63,9 +63,9 @@ class SuggestionService {
 
   async getSuggestionByTrackingCode(trackingCode) {
     try {
-      const suggestion = await Suggestion.findOne({ 
-        trackingCode: trackingCode.toUpperCase() 
-      }).select('-__v');
+      const suggestion = await Suggestion.findOne({
+        trackingCode: trackingCode.toUpperCase()
+      }).select('-__v').lean();
 
       if (!suggestion) {
         logger.warn('Suggestion not found', { trackingCode });
@@ -74,9 +74,9 @@ class SuggestionService {
 
       return suggestion;
     } catch (error) {
-      logger.error('Error fetching suggestion by tracking code', { 
-        trackingCode, 
-        error: error.message 
+      logger.error('Error fetching suggestion by tracking code', {
+        trackingCode,
+        error: error.message
       });
       throw error;
     }
@@ -85,7 +85,7 @@ class SuggestionService {
   async getSuggestions(filters, pagination) {
     try {
       const query = { isDeleted: { $ne: true } };
-      
+
       // Handle archived filter
       if (filters.archived === 'true') {
         query.isArchived = true;
@@ -94,21 +94,21 @@ class SuggestionService {
       } else {
         query.isArchived = { $ne: true };
       }
-      
+
       if (filters.category && filters.category !== 'all') {
         query.category = filters.category;
       }
       if (filters.status && filters.status !== 'all') {
         query.status = filters.status;
       }
-      
+
       // Identity filter
       if (filters.identity === 'anonymous') {
         query.isAnonymous = true;
       } else if (filters.identity === 'identified') {
         query.isAnonymous = false;
       }
-      
+
       if (filters.search) {
         query.$or = [
           { title: { $regex: filters.search, $options: 'i' } },
@@ -116,7 +116,7 @@ class SuggestionService {
           { trackingCode: { $regex: filters.search, $options: 'i' } }
         ];
       }
-      
+
       // Date range filtering
       if (filters.dateFrom || filters.dateTo) {
         query.createdAt = {};
@@ -138,17 +138,17 @@ class SuggestionService {
       }
 
       const count = await Suggestion.countDocuments(query);
-      
+
       let suggestions;
       if (filters.sort === 'priority_high' || filters.sort === 'priority_low') {
-        const priorityOrder = filters.sort === 'priority_high' 
+        const priorityOrder = filters.sort === 'priority_high'
           ? { 'urgent': 1, 'high': 2, 'medium': 3, 'low': 4 }
           : { 'low': 1, 'medium': 2, 'high': 3, 'urgent': 4 };
-        
+
         suggestions = await Suggestion.aggregate([
           { $match: query },
-          { 
-            $addFields: { 
+          {
+            $addFields: {
               priorityOrder: {
                 $switch: {
                   branches: [
@@ -193,7 +193,7 @@ class SuggestionService {
   async getSuggestionById(id) {
     try {
       const suggestion = await Suggestion.findById(id).select('-__v');
-      
+
       if (!suggestion) {
         logger.warn('Suggestion not found', { id });
         return null;
@@ -267,7 +267,7 @@ class SuggestionService {
   async markAsRead(id, adminInfo) {
     try {
       const suggestion = await Suggestion.findById(id);
-      
+
       if (!suggestion) {
         return null;
       }
@@ -305,7 +305,7 @@ class SuggestionService {
   async toggleArchive(id, adminInfo) {
     try {
       const suggestion = await Suggestion.findById(id);
-      
+
       if (!suggestion) {
         return null;
       }
@@ -331,7 +331,7 @@ class SuggestionService {
   async deleteSuggestion(id) {
     try {
       const suggestion = await Suggestion.findById(id);
-      
+
       if (!suggestion) {
         return null;
       }
@@ -376,14 +376,14 @@ class SuggestionService {
   async getStatistics() {
     try {
       const activeFilter = { isArchived: { $ne: true }, isDeleted: { $ne: true } };
-      
+
       const total = await Suggestion.countDocuments(activeFilter);
-      
+
       const byCategory = await Suggestion.aggregate([
         { $match: activeFilter },
         { $group: { _id: '$category', count: { $sum: 1 } } }
       ]);
-      
+
       const byStatus = await Suggestion.aggregate([
         { $match: activeFilter },
         { $group: { _id: '$status', count: { $sum: 1 } } }
@@ -428,7 +428,7 @@ class SuggestionService {
     try {
       const query = { isArchived: true, isDeleted: { $ne: true } };
       const count = await Suggestion.countDocuments(query);
-      
+
       const suggestions = await Suggestion.find(query)
         .sort({ archivedAt: -1 })
         .limit(pagination.limit)
