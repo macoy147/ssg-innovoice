@@ -7,7 +7,7 @@ export class CreateSuggestionDTO {
     this.content = data.content?.trim();
     this.isAnonymous = Boolean(data.isAnonymous);
     this.image = data.image;
-    
+
     // Only include submitter if not anonymous
     if (!this.isAnonymous && data.submitter) {
       this.submitter = {
@@ -49,7 +49,7 @@ export class SuggestionResponseDTO {
     this.trackingCode = suggestion.trackingCode;
     this.category = suggestion.category;
     this.title = suggestion.title;
-    this.content = suggestion.content;
+    this.content = suggestion.content || suggestion.description || '';
     this.isAnonymous = suggestion.isAnonymous;
     this.status = suggestion.status;
     this.priority = suggestion.priority;
@@ -64,7 +64,7 @@ export class SuggestionResponseDTO {
     this.statusHistory = suggestion.statusHistory;
     this.createdAt = suggestion.createdAt;
     this.updatedAt = suggestion.updatedAt;
-    
+
     // Only include submitter if not anonymous
     if (!suggestion.isAnonymous && suggestion.submitter) {
       this.submitter = {
@@ -85,7 +85,7 @@ export class PublicSuggestionResponseDTO {
     this.trackingCode = suggestion.trackingCode;
     this.category = suggestion.category;
     this.title = suggestion.title;
-    this.content = suggestion.content;
+    this.content = suggestion.content || suggestion.description || '';
     this.status = suggestion.status;
     this.priority = suggestion.priority;
     this.imageUrl = suggestion.imageUrl;
@@ -97,7 +97,7 @@ export class PublicSuggestionResponseDTO {
     }));
     this.createdAt = suggestion.createdAt;
     this.updatedAt = suggestion.updatedAt;
-    
+
     // Never expose submitter info in public tracking
   }
 }

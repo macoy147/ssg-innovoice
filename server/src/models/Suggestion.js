@@ -19,7 +19,12 @@ const suggestionSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
+    // Not strictly required at db level to support legacy docs that only have 'description'
+    trim: true,
+    maxlength: 2000
+  },
+  description: {
+    type: String,
     trim: true,
     maxlength: 2000
   },
@@ -117,7 +122,7 @@ const suggestionSchema = new mongoose.Schema({
 });
 
 // Generate unique tracking code before validation
-suggestionSchema.pre('validate', function(next) {
+suggestionSchema.pre('validate', function (next) {
   if (!this.trackingCode) {
     const prefix = 'VISI';
     const timestamp = Date.now().toString(36).toUpperCase();
