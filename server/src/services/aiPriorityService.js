@@ -22,34 +22,47 @@ function initializeAI() {
   }
 }
 
-// Gemini API call function
+// Gemini API call function (tries current available models)
 async function callGemini(prompt) {
   if (!geminiApiKey) {
     throw new Error('Gemini API key not configured');
   }
   
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 200,
+  const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 250,
+            }
+          })
         }
-      })
+      );
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Gemini API error (${model}): ${response.status} - ${error}`);
+      }
+      
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (err) {
+      lastError = err;
+      logger.warn(`Gemini model ${model} failed, trying next fallback...`, { error: err.message });
     }
-  );
-  
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Gemini API error: ${response.status} - ${error}`);
   }
-  
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  throw lastError || new Error('All Gemini models failed');
 }
 
 /**
@@ -138,13 +151,19 @@ Description: ${content}
 Respond ONLY with this JSON:
 {"priority":"medium","reason":"Brief explanation of what student wants and why this priority."}`;
 
-  // Helper to parse AI response
+  // Helper to parse AI response safely
   const parseResponse = (text) => {
-    let cleanText = text;
+    let cleanText = text || '';
+    // Strip thinking tokens if reasoning model is used
+    cleanText = cleanText.replace(/<think>[\s\S]*?<\/think>/gi, '');
     cleanText = cleanText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
     cleanText = cleanText.trim();
     
-    const parsed = JSON.parse(cleanText);
+    // Extract JSON block using regex
+    const jsonMatch = cleanText.match(/\{[\s\S]*?"priority"[\s\S]*?\}/);
+    const targetJson = jsonMatch ? jsonMatch[0] : cleanText;
+
+    const parsed = JSON.parse(targetJson);
     const validPriorities = ['low', 'medium', 'high', 'urgent'];
     
     if (parsed.priority && validPriorities.includes(parsed.priority.toLowerCase())) {
@@ -159,36 +178,30 @@ Respond ONLY with this JSON:
 
   // Try Groq first (primary)
   if (groq) {
-    try {
-      logger.debug('Trying Groq AI (primary)');
-      const startTime = Date.now();
+    const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+    for (const model of groqModels) {
+      try {
+        logger.debug(`Trying Groq AI with model: ${model}`);
+        const startTime = Date.now();
 
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.3,
-        max_tokens: 200,
-      });
+        const completion = await groq.chat.completions.create({
+          messages: [{ role: 'user', content: prompt }],
+          model: model,
+          temperature: 0.2,
+          max_tokens: 500,
+        });
 
-      const text = completion.choices[0]?.message?.content?.trim() || '';
-      const elapsed = Date.now() - startTime;
-      
-      logger.debug(`Groq response received in ${elapsed}ms`);
-      
-      const result = parseResponse(text);
-      logger.info('Groq AI analysis successful', { priority: result.priority });
-      return result;
+        const text = completion.choices[0]?.message?.content?.trim() || '';
+        const elapsed = Date.now() - startTime;
+        
+        logger.debug(`Groq response received in ${elapsed}ms`);
+        
+        const result = parseResponse(text);
+        logger.info(`Groq AI analysis successful [${model}]`, { priority: result.priority });
+        return result;
 
-    } catch (error) {
-      logger.error('Groq AI failed', { error: error.message });
-      
-      // Check if rate limited - try Gemini fallback
-      const isRateLimited = error.message.includes('429') || 
-                           error.message.includes('rate limit') ||
-                           error.message.includes('quota');
-      
-      if (isRateLimited) {
-        logger.warn('Groq rate limited - switching to Gemini fallback');
+      } catch (error) {
+        logger.warn(`Groq model ${model} failed`, { error: error.message });
       }
     }
   }

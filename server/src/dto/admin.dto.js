@@ -11,13 +11,20 @@ export class AdminVerifyResponseDTO {
     this.role = adminInfo.role;
     this.label = adminInfo.label;
     this.color = adminInfo.color;
+    this.name = adminInfo.name || null;
+    this.email = adminInfo.email || null;
+    this.picture = adminInfo.picture || null;
   }
 }
 
 export class ActivityLogResponseDTO {
   constructor(log) {
+    this._id = log._id ? log._id.toString() : (log.id || null);
     this.adminRole = log.adminRole;
     this.adminLabel = log.adminLabel;
+    this.adminName = log.adminName || null;
+    this.adminEmail = log.adminEmail || null;
+    this.adminPicture = log.adminPicture || null;
     this.action = log.action;
     this.suggestionId = log.suggestionId;
     this.suggestionTitle = log.suggestionTitle;
@@ -33,6 +40,9 @@ export class OnlineAdminResponseDTO {
     this.role = admin.role;
     this.label = admin.label;
     this.color = admin.color;
+    this.name = admin.name || null;
+    this.email = admin.email || null;
+    this.picture = admin.picture || null;
     this.lastSeen = admin.lastSeen;
     this.loginTime = admin.loginTime;
   }

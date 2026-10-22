@@ -1,26 +1,87 @@
-// Color Scheme - Red, White, Grey, Black
-// Primary Colors (Red tones)
-$primary-red: #dc2626;         // Vibrant red
-$primary-red-light: #ef4444;   // Light red
-$primary-red-dark: #991b1b;    // Dark red
-$primary-red-darker: #7f1d1d;  // Deeper red
+// ============================================
+// INNOVOICE INSTITUTIONAL PORTAL COLOR SYSTEM
+// ============================================
 
-// Neutral Colors (Grayscale)
-$color-white: #ffffff;         // Pure white
-$color-black: #000000;         // Pure black
-$color-grey-light: #f5f5f5;    // Light grey
-$color-grey: #9ca3af;          // Medium grey
-$color-grey-dark: #4b5563;     // Dark grey
-$color-grey-darker: #1f2937;   // Darker grey
+// ── 1. Background Colors ────────────────────
+$bg-main:              #1F2937; // Main Background (overall app background, header areas, dark sections)
+$bg-secondary:         #374151; // Secondary Background (navigation areas, secondary panels, supporting sections)
 
-// Accent Colors
-$accent-red: #dc2626;          // For alerts/errors
-$accent-green: #16a34a;        // For success
-$accent-orange: #f97316;       // For warnings
+// ── 2. Surface Colors ───────────────────────
+$surface-card:         #FFFFFF; // Card Background (main content cards, forms, modals, info containers)
+$surface-accent-soft:  #FCE7F3; // Soft Accent Surface (selected states, highlighted info, subtle notifications, active elements)
+$surface-subtle:       #F9FAFB; // Neutral soft surface (inputs, secondary areas)
 
-// Neutral Colors
-$white: #ffffff;
-$gray-50: #f9fafb;
+// ── 3. Typography Colors ────────────────────
+$text-primary:         #111827; // Primary Text (headings, titles, important labels, main content text)
+$text-secondary:       #6B7280; // Secondary Text (descriptions, supporting info, placeholders, metadata)
+$text-on-dark:         #F9FAFB; // Text on Dark Backgrounds (navigation text, dark headers, hero sections)
+$text-muted:           #9CA3AF; // Low priority (metadata, small labels, disabled states)
+
+// ── 4. Border and Divider Colors ────────────
+$border-color:         #D1D5DB; // Border (card borders, separators, input fields, inactive states)
+$border-light:         #E5E7EB; // Soft inner divider
+
+// ── 5. Brand Accent Colors ──────────────────
+$primary-accent:       #9F1239; // Primary Accent (primary buttons, active nav states, important actions, selected steps)
+$accent-hover:         #881337; // Accent Hover (hover effects and pressed states)
+$primary-accent-subtle: rgba(159, 18, 57, 0.10);
+$primary-accent-glow:   rgba(159, 18, 57, 0.25);
+
+// ── Backward Compatible Aliases & System Mapping ──
+$palette-slate:        $bg-main;
+$palette-cool-gray:    $text-secondary;
+$palette-blue-gray:    $border-color;
+$palette-blush:        $surface-accent-soft;
+$palette-terracotta:   $primary-accent;
+$palette-brick-red:    $primary-accent;
+
+$primary-red:          $primary-accent;
+$primary-red-hover:    $accent-hover;
+$primary-red-light:    $surface-accent-soft;
+$primary-red-dark:     $accent-hover;
+$primary-red-darker:   #700d2b;
+
+$brand-brick:          $primary-accent;
+$brand-brick-hover:    $accent-hover;
+$brand-brick-subtle:   rgba(159, 18, 57, 0.12);
+
+$canvas-light:         #F9FAFB;
+$surface-white:        $surface-card;
+$surface:              $surface-card;
+$surface-2:            $surface-subtle;
+$surface-3:            #F3F4F6;
+$slate-canvas:         $bg-main;
+$slate-surface:        $bg-secondary;
+$slate-elevated:       #4B5563;
+
+$color-bg-base:        $bg-main;
+$color-bg-surface:     $bg-secondary;
+$color-bg-elevated:    #4B5563;
+$color-bg-hover:       #4B5563;
+
+$border:               $border-color;
+$border-strong:        $text-secondary;
+$color-border-subtle:  rgba(209, 213, 219, 0.2);
+$color-border-crimson: rgba(159, 18, 57, 0.3);
+
+$text-heading:         $text-primary;
+$text-body:            $text-primary;
+$text-faint:           $text-muted;
+$text-light-heading:   $text-on-dark;
+$text-light-body:      #E5E7EB;
+$text-light-muted:     $text-muted;
+
+$color-white:          #FFFFFF;
+$color-black:          #111827;
+$white:                #FFFFFF;
+$black:                #111827;
+$color-grey-darker:    $text-primary;
+$color-grey-dark:      $bg-secondary;
+$color-grey:           $text-secondary;
+$color-grey-light:     $border-color;
+$color-grey-lighter:   $surface-subtle;
+
+$gray-50:  #f9fafb;
 $gray-100: #f3f4f6;
 $gray-200: #e5e7eb;
 $gray-300: #d1d5db;
@@ -30,74 +91,102 @@ $gray-600: #4b5563;
 $gray-700: #374151;
 $gray-800: #1f2937;
 $gray-900: #111827;
-$black: #000000;
 
-// Gradients
-$gradient-primary: linear-gradient(135deg, $primary-red-dark 0%, $primary-red 100%);
-$gradient-secondary: linear-gradient(135deg, $color-grey-darker 0%, $color-grey-dark 100%);
-$gradient-hero: linear-gradient(135deg, $color-black 0%, $primary-red-darker 50%, $primary-red-dark 100%);
-$gradient-light: linear-gradient(135deg, $color-white 0%, $color-grey-light 100%);
+// ── 6. Semantic Status Accents ──────────────
+$accent-green:         #10B981; // Resolved / Success
+$accent-amber:         #F59E0B; // Under Review / Warning
+$accent-orange:        #F59E0B;
+$accent-red:           #DC2626; // Critical / Error / Delete
+$accent-blue:          #2563EB; // Info
 
-// Shadows
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-$shadow-glow: 0 0 20px rgba(220, 38, 38, 0.4);
-$shadow-red: 0 0 30px rgba(220, 38, 38, 0.5);
+$pill-green-bg:        #DEF7EC;
+$pill-green-text:      #03543F;
+$pill-amber-bg:        #FEF3C7;
+$pill-amber-text:      #92400E;
+$pill-red-bg:          #FEE2E2;
+$pill-red-text:        #991B1B;
+$pill-blue-bg:         #DBEAFE;
+$pill-blue-text:       #1E40AF;
+$pill-gray-bg:         #F3F4F6;
+$pill-gray-text:       $text-secondary;
 
-// Typography
+// ── 7. Gradients ────────────────────────────
+$gradient-primary:       linear-gradient(135deg, $primary-accent 0%, $accent-hover 100%);
+$gradient-primary-hover: linear-gradient(135deg, #A8183E 0%, #7E1233 100%);
+$gradient-terracotta:    $gradient-primary;
+$gradient-brick:         $gradient-primary;
+$gradient-hero:          linear-gradient(180deg, #1F2937 0%, #111827 100%);
+$gradient-navbar:        rgba(31, 41, 55, 0.96);
+$gradient-surface:       $bg-secondary;
+$gradient-secondary:     linear-gradient(135deg, $bg-secondary 0%, #1F2937 100%);
+$gradient-blush:         $surface-accent-soft;
+$gradient-card:          #FFFFFF;
+$gradient-light:         #FFFFFF;
+
+// ── 8. Shadows ──────────────────────────────
+$shadow-xs: 0 1px 2px rgba(17, 24, 39, 0.05);
+$shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.08), 0 1px 2px rgba(17, 24, 39, 0.04);
+$shadow-md: 0 4px 6px -1px rgba(17, 24, 39, 0.08), 0 2px 4px -2px rgba(17, 24, 39, 0.05);
+$shadow-lg: 0 10px 15px -3px rgba(17, 24, 39, 0.08), 0 4px 6px -4px rgba(17, 24, 39, 0.04);
+$shadow-xl: 0 20px 25px -5px rgba(17, 24, 39, 0.08), 0 8px 10px -6px rgba(17, 24, 39, 0.04);
+$shadow-glow: 0 0 20px rgba(159, 18, 57, 0.25);
+$shadow-primary: 0 4px 14px rgba(159, 18, 57, 0.25);
+$shadow-brick: 0 4px 14px rgba(159, 18, 57, 0.25);
+$shadow-red: 0 0 25px rgba(159, 18, 57, 0.35);
+
+// ── Typography ──────────────────────────────
 $font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-$font-heading: 'Poppins', 'Inter', sans-serif;
+$font-heading: 'Inter', 'Poppins', sans-serif;
 
-// Font Sizes
-$text-xs: 0.75rem;    // 12px
-$text-sm: 0.875rem;   // 14px
-$text-base: 1rem;     // 16px
-$text-lg: 1.125rem;   // 18px
-$text-xl: 1.25rem;    // 20px
-$text-2xl: 1.5rem;    // 24px
-$text-3xl: 1.875rem;  // 30px
-$text-4xl: 2.25rem;   // 36px
-$text-5xl: 3rem;      // 48px
+// ── Font Sizes ──────────────────────────────
+$text-xs:   0.75rem;
+$text-sm:   0.875rem;
+$text-base: 1rem;
+$text-lg:   1.125rem;
+$text-xl:   1.25rem;
+$text-2xl:  1.5rem;
+$text-3xl:  1.875rem;
+$text-4xl:  2.25rem;
+$text-5xl:  3rem;
 
-// Spacing
-$spacing-1: 0.25rem;  // 4px
-$spacing-2: 0.5rem;   // 8px
-$spacing-3: 0.75rem;  // 12px
-$spacing-4: 1rem;     // 16px
-$spacing-5: 1.25rem;  // 20px
-$spacing-6: 1.5rem;   // 24px
-$spacing-8: 2rem;     // 32px
-$spacing-10: 2.5rem;  // 40px
-$spacing-12: 3rem;    // 48px
-$spacing-16: 4rem;    // 64px
+// ── Spacing ─────────────────────────────────
+$spacing-1:  0.25rem;
+$spacing-2:  0.5rem;
+$spacing-3:  0.75rem;
+$spacing-4:  1rem;
+$spacing-5:  1.25rem;
+$spacing-6:  1.5rem;
+$spacing-8:  2rem;
+$spacing-10: 2.5rem;
+$spacing-12: 3rem;
+$spacing-16: 4rem;
 
-// Breakpoints
-$breakpoint-xs: 320px;
-$breakpoint-sm: 576px;
-$breakpoint-md: 768px;
-$breakpoint-lg: 992px;
-$breakpoint-xl: 1200px;
+// ── Breakpoints ─────────────────────────────
+$breakpoint-xs:  320px;
+$breakpoint-sm:  576px;
+$breakpoint-md:  768px;
+$breakpoint-lg:  992px;
+$breakpoint-xl:  1200px;
 $breakpoint-xxl: 1400px;
 
-// Transitions
+// ── Transitions ─────────────────────────────
 $transition-fast: 150ms ease-in-out;
-$transition-base: 300ms ease-in-out;
-$transition-slow: 500ms ease-in-out;
+$transition-base: 250ms ease-in-out;
+$transition-slow: 400ms ease-in-out;
 
-// Border Radius
-$radius-sm: 0.25rem;  // 4px
-$radius-md: 0.5rem;   // 8px
-$radius-lg: 0.75rem;  // 12px
-$radius-xl: 1rem;     // 16px
+// ── Border Radius ───────────────────────────
+$radius-sm:   0.375rem;
+$radius-md:   0.5rem;
+$radius-lg:   0.75rem;
+$radius-xl:   1rem;
+$radius-2xl:  1.25rem;
 $radius-full: 9999px;
 
-// Z-index
-$z-dropdown: 1000;
-$z-sticky: 1020;
-$z-fixed: 1030;
+// ── Z-index ─────────────────────────────────
+$z-dropdown:       1000;
+$z-sticky:         1020;
+$z-fixed:          1030;
 $z-modal-backdrop: 1040;
-$z-modal: 1050;
-$z-popover: 1060;
-$z-tooltip: 1070;
+$z-modal:          1050;
+$z-popover:        1060;
+$z-tooltip:        1070;

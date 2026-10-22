@@ -11,6 +11,18 @@ const activityLogSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  adminName: {
+    type: String,
+    default: null
+  },
+  adminEmail: {
+    type: String,
+    default: null
+  },
+  adminPicture: {
+    type: String,
+    default: null
+  },
   
   // Action details
   action: {
@@ -75,6 +87,8 @@ const activityLogSchema = new mongoose.Schema({
 activityLogSchema.index({ createdAt: -1 });
 activityLogSchema.index({ adminRole: 1, createdAt: -1 });
 activityLogSchema.index({ action: 1, createdAt: -1 });
+activityLogSchema.index({ suggestionTrackingCode: 1, createdAt: -1 });
+activityLogSchema.index({ adminEmail: 1, createdAt: -1 });
 
 const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
 

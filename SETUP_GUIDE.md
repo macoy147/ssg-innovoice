@@ -185,21 +185,18 @@ npm run preview
 - **Automatic Optimization:** Images compressed and optimized for web
 - **Admin View:** 📷 icon shows on suggestions with photos, "View Evidence" button in detail view
 
-## Admin Accounts
+## Admin Accounts (Google OAuth Role-Based Access Control)
 
-Default admin accounts (change passwords in production):
+Administrative access is strictly protected via authentic Google OAuth and Role-Based Access Control (RBAC). Static passwords have been decommissioned for enterprise-grade security.
 
-| Username | Role | Access Level |
-|----------|------|--------------|
-| ssg2526pres | Executive | Full access |
-| ssg2526vp | Executive | Full access |
-| ssg2526cote | Executive | Full access |
-| ssg2526coed | Executive | Full access |
-| ssg2526presssec | Press Secretary | Full access |
-| ssg2526netsec | Network Secretary | Full access |
-| ssg2526dev | Developer | Full access + cleanup tools |
-| ssg2526mathrep | Executive | Full access |
-| ssg2526smm | Press Secretary | Full access |
+To authorize an officer or developer:
+1. Configure `ADMIN_EMAILS` in `server/.env`:
+   ```bash
+   ADMIN_EMAILS=president@gmail.com:executive:SSG President:#8b5cf6,developer@gmail.com:developer:Developer:#6366f1
+   ```
+2. Officers sign in via their authorized Google Account.
+3. Upon authentication, verified Google tokens grant the corresponding administrative privileges and color badges.
+4. Unauthorized accounts are blocked from accessing administrative routes.
 
 ## Deployment
 

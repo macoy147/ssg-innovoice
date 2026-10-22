@@ -1,38 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  IconSearch, 
+  IconAlertCircle, 
+  IconCheck, 
+  IconFileText, 
+  IconEye, 
+  IconSend, 
+  IconBolt, 
+  IconCircleCheck, 
+  IconX,
+  IconSchool,
+  IconBuildingBank,
+  IconUsersGroup,
+  IconBulb,
+  IconPhoto,
+  IconX as IconClose,
+  IconArchive,
+  IconCircleX,
+  IconInfoCircle
+} from '@tabler/icons-react';
 import axios from 'axios';
 import './TrackSuggestion.scss';
 import API_URL from '../../config/api';
 
-const TrackSuggestion = ({ isOpen, onClose }) => {
-  const [trackingCode, setTrackingCode] = useState('');
+const statusConfig = {
+  submitted: { label: 'Submitted', color: '#9ca3af', Icon: IconFileText, step: 1 },
+  under_review: { label: 'Under Review', color: '#f59e0b', Icon: IconEye, step: 2 },
+  forwarded: { label: 'Forwarded', color: '#3b82f6', Icon: IconSend, step: 3 },
+  action_taken: { label: 'Action Taken', color: '#8b5cf6', Icon: IconBolt, step: 4 },
+  resolved: { label: 'Resolved', color: '#22c55e', Icon: IconCircleCheck, step: 5 },
+  rejected: { label: 'Declined / Closed', color: '#ef4444', Icon: IconCircleX, step: -1 },
+  dismissed: { label: 'Dismissed from Queue', color: '#64748b', Icon: IconArchive, step: -2 },
+  purged: { label: 'Archived / Closed', color: '#64748b', Icon: IconArchive, step: -2 }
+};
+
+const categoryConfig = {
+  academic: { label: 'Academic Services', Icon: IconSchool },
+  administrative: { label: 'Administrative Matters', Icon: IconBuildingBank },
+  extracurricular: { label: 'Extracurricular Activities', Icon: IconUsersGroup },
+  general: { label: 'General Improvements', Icon: IconBulb }
+};
+
+const TrackSuggestion = ({ isOpen, onClose, initialCode = '' }) => {
+  const [trackingCode, setTrackingCode] = useState(initialCode);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [suggestion, setSuggestion] = useState(null);
 
-  const statusConfig = {
-    submitted: { label: 'Submitted', color: '#6b7280', icon: '📝', step: 1 },
-    under_review: { label: 'Under Review', color: '#f59e0b', icon: '🔍', step: 2 },
-    forwarded: { label: 'Forwarded', color: '#3b82f6', icon: '📤', step: 3 },
-    action_taken: { label: 'Action Taken', color: '#8b5cf6', icon: '⚡', step: 4 },
-    resolved: { label: 'Resolved', color: '#22c55e', icon: '✅', step: 5 },
-    rejected: { label: 'Rejected', color: '#ef4444', icon: '❌', step: -1 }
-  };
-
-  const categoryLabels = {
-    academic: { label: 'Academic Services', icon: '📚' },
-    administrative: { label: 'Administrative Matters', icon: '🏛️' },
-    extracurricular: { label: 'Extracurricular Activities', icon: '🎭' },
-    general: { label: 'General Improvements', icon: '💡' }
-  };
-
-  const handleTrack = async (e) => {
-    e.preventDefault();
-    
-    if (!trackingCode.trim()) {
-      setError('Please enter a tracking code');
-      return;
-    }
+  const fetchSuggestion = useCallback(async (codeToTrack) => {
+    if (!codeToTrack || !codeToTrack.trim()) return;
 
     setIsLoading(true);
     setError('');
@@ -40,7 +57,7 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
 
     try {
       const response = await axios.get(
-        `${API_URL}/api/suggestions/track/${trackingCode.trim().toUpperCase()}`
+        `${API_URL}/api/suggestions/track/${codeToTrack.trim().toUpperCase()}`
       );
 
       if (response.data.success) {
@@ -55,6 +72,28 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialCode) {
+        setTrackingCode(initialCode);
+        fetchSuggestion(initialCode);
+      }
+    } else {
+      setTrackingCode('');
+      setError('');
+      setSuggestion(null);
+    }
+  }, [isOpen, initialCode, fetchSuggestion]);
+
+  const handleTrack = async (e) => {
+    e.preventDefault();
+    if (!trackingCode.trim()) {
+      setError('Please enter a tracking code');
+      return;
+    }
+    fetchSuggestion(trackingCode);
   };
 
   const handleClose = () => {
@@ -99,15 +138,15 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
         >
           {/* Modal Header */}
           <div className="track-modal-header">
-            <div className="header-icon">🔍</div>
+            <div className="header-icon">
+              <IconSearch size={22} color="#fca5a5" />
+            </div>
             <div className="header-text">
-              <h2>Track Your Suggestion</h2>
-              <p>Enter your tracking code to check the status</p>
+              <h2>Track Suggestion</h2>
+              <p>Enter your tracking code to view status and timeline updates</p>
             </div>
             <button className="close-btn" onClick={handleClose} aria-label="Close">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M4 4L16 16M4 16L16 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <IconClose size={20} />
             </button>
           </div>
 
@@ -121,7 +160,7 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                   setTrackingCode(e.target.value.toUpperCase());
                   setError('');
                 }}
-                placeholder="Enter tracking code (e.g., VISI-XXXXX-XXXX)"
+                placeholder="Enter tracking code (e.g. VISI-XXXXX-XXXX)"
                 className={error ? 'error' : ''}
                 autoFocus
               />
@@ -149,19 +188,7 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
               >
-                <motion.div 
-                  className="error-icon"
-                  animate={{ 
-                    rotate: [0, -10, 10, -10, 10, 0],
-                    scale: [1, 1.2, 1]
-                  }}
-                  transition={{ 
-                    duration: 0.5,
-                    delay: 0.2
-                  }}
-                >
-                  ⚠️
-                </motion.div>
+                <IconAlertCircle size={18} className="error-icon-svg" />
                 <p>{error}</p>
               </motion.div>
             )}
@@ -178,13 +205,49 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                 transition={{ duration: 0.3 }}
               >
                 {/* Status Badge */}
-                <div className={`status-banner status-${suggestion.status}`}>
-                  <span className="status-icon">{statusConfig[suggestion.status]?.icon}</span>
-                  <span className="status-label">{statusConfig[suggestion.status]?.label}</span>
-                </div>
+                {(() => {
+                  const statusInfo = statusConfig[suggestion.status] || statusConfig.submitted;
+                  const StatusIcon = statusInfo.Icon;
+                  return (
+                    <div className={`status-banner status-${suggestion.status}`}>
+                      <StatusIcon size={18} className="status-icon" />
+                      <span className="status-label">{statusInfo.label}</span>
+                    </div>
+                  );
+                })()}
+
+                {/* Institutional Notice Banner for Closed / Dismissed / Rejected Reports */}
+                {['rejected', 'dismissed', 'purged'].includes(suggestion.status) && (
+                  <div className={`institutional-notice-banner notice-${suggestion.status}`}>
+                    <div className="notice-header">
+                      <div className="notice-badge">
+                        {suggestion.status === 'rejected' ? (
+                          <>
+                            <IconCircleX size={18} />
+                            <span>Official Resolution: Declined / Closed</span>
+                          </>
+                        ) : (
+                          <>
+                            <IconArchive size={18} />
+                            <span>Administrative Notice: Dismissed from Queue</span>
+                          </>
+                        )}
+                      </div>
+                      <span className="notice-date">
+                        {formatDate(suggestion.dismissedAt || suggestion.purgedAt || suggestion.updatedAt)}
+                      </span>
+                    </div>
+                    <div className="notice-body">
+                      <p className="notice-reason-title">Official Reason from SSG:</p>
+                      <p className="notice-reason-text">
+                        {suggestion.dismissalReason || suggestion.rejectionReason || "This suggestion was reviewed and closed by SSG administration."}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Progress Timeline */}
-                {suggestion.status !== 'rejected' && (
+                {!['rejected', 'dismissed', 'purged'].includes(suggestion.status) && (
                   <div className="progress-timeline">
                     {['submitted', 'under_review', 'forwarded', 'action_taken', 'resolved'].map((status, index) => {
                       const currentStep = getStatusStep(suggestion.status);
@@ -195,7 +258,7 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                       return (
                         <div key={status} className="timeline-step">
                           <div className={`step-dot ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
-                            {isCompleted ? '✓' : stepNum}
+                            {isCompleted ? <IconCheck size={12} strokeWidth={3} /> : stepNum}
                           </div>
                           <span className={`step-label ${isCompleted || isCurrent ? 'active' : ''}`}>
                             {statusConfig[status]?.label}
@@ -213,10 +276,16 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                 <div className="suggestion-details">
                   <div className="detail-card">
                     <div className="detail-header">
-                      <span className="category-badge">
-                        <span>{categoryLabels[suggestion.category]?.icon}</span>
-                        {categoryLabels[suggestion.category]?.label}
-                      </span>
+                      {(() => {
+                        const catInfo = categoryConfig[suggestion.category] || categoryConfig.general;
+                        const CatIcon = catInfo.Icon;
+                        return (
+                          <span className="category-badge">
+                            <CatIcon size={14} style={{ marginRight: '4px', verticalAlign: 'text-bottom' }} />
+                            {catInfo.label}
+                          </span>
+                        );
+                      })()}
                       <span className="tracking-code">{suggestion.trackingCode}</span>
                     </div>
                     
@@ -225,6 +294,18 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                     <div className="suggestion-content">
                       <p>{suggestion.content}</p>
                     </div>
+
+                    {suggestion.imageUrl && (
+                      <div className="suggestion-evidence-preview">
+                        <span className="evidence-label">
+                          <IconPhoto size={14} style={{ marginRight: '4px', verticalAlign: 'text-bottom' }} />
+                          Attached Evidence:
+                        </span>
+                        <a href={suggestion.imageUrl} target="_blank" rel="noopener noreferrer" className="evidence-link">
+                          <img src={suggestion.imageUrl} alt="Evidence" className="evidence-thumb" />
+                        </a>
+                      </div>
+                    )}
 
                     <div className="detail-footer">
                       <div className="footer-item">
@@ -265,14 +346,6 @@ const TrackSuggestion = ({ isOpen, onClose }) => {
                     </div>
                   )}
                 </div>
-
-                {/* Action Button */}
-                <button className="new-search-btn" onClick={() => {
-                  setSuggestion(null);
-                  setTrackingCode('');
-                }}>
-                  Track Another Suggestion
-                </button>
               </motion.div>
             )}
           </AnimatePresence>

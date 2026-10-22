@@ -1,4 +1,5 @@
 import Suggestion from '../models/Suggestion.js';
+import ReportTombstone from '../models/ReportTombstone.js';
 import logger from '../utils/logger.js';
 import { analyzePriority } from './aiPriorityService.js';
 import { uploadImage } from './imageUploadService.js';
@@ -36,6 +37,7 @@ class SuggestionService {
         title: dto.title,
         content: dto.content,
         isAnonymous: dto.isAnonymous,
+        userId: dto.userId || null,
         priority: priority,
         aiPriorityReason: reason,
         imageUrl: imageUrl
@@ -63,16 +65,30 @@ class SuggestionService {
 
   async getSuggestionByTrackingCode(trackingCode) {
     try {
+      const code = trackingCode.trim().toUpperCase();
       const suggestion = await Suggestion.findOne({ 
-        trackingCode: trackingCode.toUpperCase() 
+        trackingCode: code 
       }).select('-__v');
 
-      if (!suggestion) {
-        logger.warn('Suggestion not found', { trackingCode });
-        return null;
+      if (suggestion) {
+        return suggestion;
       }
 
-      return suggestion;
+      // Safeguard: Check if this was a permanently purged report with an official tombstone
+      const tombstone = await ReportTombstone.findOne({ trackingCode: code }).lean();
+      if (tombstone) {
+        return {
+          trackingCode: tombstone.trackingCode,
+          title: tombstone.title,
+          category: tombstone.category,
+          status: 'purged',
+          reason: tombstone.reason,
+          purgedAt: tombstone.purgedAt
+        };
+      }
+
+      logger.warn('Suggestion not found', { trackingCode: code });
+      return null;
     } catch (error) {
       logger.error('Error fetching suggestion by tracking code', { 
         trackingCode, 
@@ -84,15 +100,22 @@ class SuggestionService {
 
   async getSuggestions(filters, pagination) {
     try {
-      const query = { isDeleted: { $ne: true } };
-      
-      // Handle archived filter
-      if (filters.archived === 'true') {
+      let query = {};
+
+      // Handle view modes: 'active', 'archived', 'trash', 'all'
+      const viewMode = filters.view || (filters.trash === 'true' ? 'trash' : (filters.archived === 'true' ? 'archived' : 'active'));
+
+      if (viewMode === 'trash') {
+        query.isDeleted = true;
+      } else if (viewMode === 'archived') {
         query.isArchived = true;
-      } else if (filters.archived === 'all') {
-        // Show all
+        query.isDeleted = { $ne: true };
+      } else if (viewMode === 'all') {
+        query.isDeleted = { $ne: true };
       } else {
+        // Default: active submissions (not archived, not deleted)
         query.isArchived = { $ne: true };
+        query.isDeleted = { $ne: true };
       }
       
       if (filters.category && filters.category !== 'all') {
@@ -109,12 +132,25 @@ class SuggestionService {
         query.isAnonymous = false;
       }
       
+      // Direct ID filter
+      if (filters.id) {
+        query._id = filters.id;
+      }
+      
       if (filters.search) {
-        query.$or = [
-          { title: { $regex: filters.search, $options: 'i' } },
-          { content: { $regex: filters.search, $options: 'i' } },
-          { trackingCode: { $regex: filters.search, $options: 'i' } }
-        ];
+        const cleanSearch = filters.search.trim().replace(/^#/, '');
+        if (cleanSearch) {
+          const escaped = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const searchRegex = new RegExp(escaped, 'i');
+          query.$or = [
+            { title: searchRegex },
+            { content: searchRegex },
+            { trackingCode: searchRegex },
+            { 'submitter.name': searchRegex },
+            { 'submitter.email': searchRegex },
+            { 'submitter.studentId': searchRegex }
+          ];
+        }
       }
       
       // Date range filtering
@@ -328,13 +364,67 @@ class SuggestionService {
     }
   }
 
-  async deleteSuggestion(id) {
+  /**
+   * Soft delete: Move suggestion to trash
+   */
+  async moveToTrash(id, adminInfo, reason = null) {
     try {
       const suggestion = await Suggestion.findById(id);
-      
-      if (!suggestion) {
-        return null;
+      if (!suggestion) return null;
+
+      suggestion.isDeleted = true;
+      suggestion.deletedAt = new Date();
+      suggestion.deletedBy = adminInfo?.label || 'Officer';
+      suggestion.deletedByRole = adminInfo?.role || null;
+      if (reason && typeof reason === 'string' && reason.trim()) {
+        suggestion.deletedReason = reason.trim();
       }
+      await suggestion.save();
+
+      logger.info('Suggestion moved to trash', { 
+        suggestionId: id, 
+        by: adminInfo?.label,
+        reason: suggestion.deletedReason 
+      });
+
+      return suggestion;
+    } catch (error) {
+      logger.error('Error moving suggestion to trash', { id, error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Restore a soft-deleted suggestion from trash
+   */
+  async restoreFromTrash(id, adminInfo) {
+    try {
+      const suggestion = await Suggestion.findById(id);
+      if (!suggestion) return null;
+
+      suggestion.isDeleted = false;
+      suggestion.deletedAt = null;
+      suggestion.deletedBy = null;
+      suggestion.deletedByRole = null;
+      suggestion.deletedReason = null;
+      await suggestion.save();
+
+      logger.info('Suggestion restored from trash', { suggestionId: id, by: adminInfo?.label });
+
+      return suggestion;
+    } catch (error) {
+      logger.error('Error restoring suggestion from trash', { id, error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Permanent delete (hard removal from database with tombstone safeguard)
+   */
+  async permanentDelete(id, adminInfo) {
+    try {
+      const suggestion = await Suggestion.findById(id);
+      if (!suggestion) return null;
 
       const suggestionInfo = {
         id: suggestion._id,
@@ -342,18 +432,101 @@ class SuggestionService {
         trackingCode: suggestion.trackingCode
       };
 
-      await Suggestion.findByIdAndDelete(id);
+      // Record tombstone so tracking code provides transparency instead of 404
+      try {
+        await ReportTombstone.findOneAndUpdate(
+          { trackingCode: suggestion.trackingCode },
+          {
+            trackingCode: suggestion.trackingCode,
+            title: suggestion.title,
+            category: suggestion.category,
+            status: 'purged',
+            reason: suggestion.deletedReason || 'Permanently removed by SSG administration during maintenance.',
+            purgedAt: new Date(),
+            purgedBy: adminInfo?.label || 'Officer'
+          },
+          { upsert: true }
+        );
+      } catch (tombstoneErr) {
+        logger.warn('Could not write tombstone for permanent delete', { error: tombstoneErr.message });
+      }
 
-      logger.info('Suggestion deleted', { suggestionId: id });
+      await Suggestion.findByIdAndDelete(id);
+      logger.info('Suggestion permanently purged', { suggestionId: id, by: adminInfo?.label });
 
       return suggestionInfo;
     } catch (error) {
-      logger.error('Error deleting suggestion', { id, error: error.message });
+      logger.error('Error permanently deleting suggestion', { id, error: error.message });
       throw error;
     }
   }
 
-  async bulkDelete(ids) {
+  // Alias deleteSuggestion to moveToTrash for safe default behavior
+  async deleteSuggestion(id, adminInfo, reason = null) {
+    return this.moveToTrash(id, adminInfo, reason);
+  }
+
+  /**
+   * Bulk move to trash
+   */
+  async bulkTrash(ids, adminInfo, reason = null) {
+    try {
+      const now = new Date();
+      const by = adminInfo?.label || 'Officer';
+      const role = adminInfo?.role || null;
+      const updateData = {
+        isDeleted: true,
+        deletedAt: now,
+        deletedBy: by,
+        deletedByRole: role
+      };
+      if (reason && typeof reason === 'string' && reason.trim()) {
+        updateData.deletedReason = reason.trim();
+      }
+
+      const result = await Suggestion.updateMany(
+        { _id: { $in: ids } },
+        { $set: updateData }
+      );
+
+      logger.info('Bulk moved to trash', { count: result.modifiedCount, by, reason });
+      return { trashedCount: result.modifiedCount };
+    } catch (error) {
+      logger.error('Error in bulk trash', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk restore from trash
+   */
+  async bulkRestore(ids, adminInfo) {
+    try {
+      const result = await Suggestion.updateMany(
+        { _id: { $in: ids } },
+        { 
+          $set: { 
+            isDeleted: false, 
+            deletedAt: null, 
+            deletedBy: null,
+            deletedByRole: null,
+            deletedReason: null 
+          } 
+        }
+      );
+
+      logger.info('Bulk restored from trash', { count: result.modifiedCount, by: adminInfo?.label });
+      return { restoredCount: result.modifiedCount };
+    } catch (error) {
+      logger.error('Error in bulk restore', { error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk permanent delete with tombstone safeguard
+   */
+  async bulkPermanentDelete(ids, adminInfo) {
     try {
       const suggestions = await Suggestion.find({ _id: { $in: ids } });
       const deletedInfo = suggestions.map(s => ({
@@ -362,13 +535,65 @@ class SuggestionService {
         trackingCode: s.trackingCode
       }));
 
-      const result = await Suggestion.deleteMany({ _id: { $in: ids } });
+      // Record tombstones
+      try {
+        const tombstones = suggestions.map(s => ({
+          trackingCode: s.trackingCode,
+          title: s.title,
+          category: s.category,
+          status: 'purged',
+          reason: s.deletedReason || 'Permanently removed during bulk maintenance.',
+          purgedAt: new Date(),
+          purgedBy: adminInfo?.label || 'Officer'
+        }));
+        await ReportTombstone.insertMany(tombstones, { ordered: false }).catch(() => {});
+      } catch (tombstoneErr) {
+        logger.warn('Could not write tombstones for bulk permanent delete', { error: tombstoneErr.message });
+      }
 
-      logger.info('Bulk delete completed', { count: result.deletedCount });
+      const result = await Suggestion.deleteMany({ _id: { $in: ids } });
+      logger.info('Bulk permanent delete completed', { count: result.deletedCount });
 
       return { deletedCount: result.deletedCount, deletedInfo };
     } catch (error) {
-      logger.error('Error bulk deleting suggestions', { error: error.message });
+      logger.error('Error bulk permanently deleting suggestions', { error: error.message });
+      throw error;
+    }
+  }
+
+  // Backward-compatible bulkDelete alias
+  async bulkDelete(ids) {
+    return this.bulkTrash(ids);
+  }
+
+  /**
+   * Empty entire trash (with tombstone safeguard for student transparency)
+   */
+  async emptyTrash(adminInfo) {
+    try {
+      const trashed = await Suggestion.find({ isDeleted: true });
+      if (trashed.length > 0) {
+        try {
+          const tombstones = trashed.map(t => ({
+            trackingCode: t.trackingCode,
+            title: t.title,
+            category: t.category,
+            status: 'purged',
+            reason: t.deletedReason || 'Purged during scheduled trash cleanup.',
+            purgedAt: new Date(),
+            purgedBy: adminInfo?.label || 'Officer'
+          }));
+          await ReportTombstone.insertMany(tombstones, { ordered: false }).catch(() => {});
+        } catch (tombstoneErr) {
+          logger.warn('Could not write tombstones for empty trash', { error: tombstoneErr.message });
+        }
+      }
+
+      const result = await Suggestion.deleteMany({ isDeleted: true });
+      logger.info('Empty trash completed', { count: result.deletedCount, by: adminInfo?.label });
+      return { deletedCount: result.deletedCount };
+    } catch (error) {
+      logger.error('Error emptying trash', { error: error.message });
       throw error;
     }
   }
@@ -376,38 +601,45 @@ class SuggestionService {
   async getStatistics() {
     try {
       const activeFilter = { isArchived: { $ne: true }, isDeleted: { $ne: true } };
-      
-      const total = await Suggestion.countDocuments(activeFilter);
-      
-      const byCategory = await Suggestion.aggregate([
-        { $match: activeFilter },
-        { $group: { _id: '$category', count: { $sum: 1 } } }
-      ]);
-      
-      const byStatus = await Suggestion.aggregate([
-        { $match: activeFilter },
-        { $group: { _id: '$status', count: { $sum: 1 } } }
-      ]);
-
-      const byPriority = await Suggestion.aggregate([
-        { $match: activeFilter },
-        { $group: { _id: '$priority', count: { $sum: 1 } } }
-      ]);
-
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      const recentCount = await Suggestion.countDocuments({
-        ...activeFilter,
-        createdAt: { $gte: weekAgo }
-      });
-
-      const anonymousCount = await Suggestion.countDocuments({ ...activeFilter, isAnonymous: true });
-      const unreadCount = await Suggestion.countDocuments({ ...activeFilter, isRead: { $ne: true } });
-      const archivedCount = await Suggestion.countDocuments({ isArchived: true, isDeleted: { $ne: true } });
-      const deletedCount = await Suggestion.countDocuments({ isDeleted: true });
+      
+      const [
+        total,
+        byCategory,
+        byStatus,
+        byPriority,
+        recentCount,
+        anonymousCount,
+        unreadCount,
+        archivedCount,
+        deletedCount,
+        grandTotal
+      ] = await Promise.all([
+        Suggestion.countDocuments(activeFilter),
+        Suggestion.aggregate([
+          { $match: activeFilter },
+          { $group: { _id: '$category', count: { $sum: 1 } } }
+        ]),
+        Suggestion.aggregate([
+          { $match: activeFilter },
+          { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]),
+        Suggestion.aggregate([
+          { $match: activeFilter },
+          { $group: { _id: '$priority', count: { $sum: 1 } } }
+        ]),
+        Suggestion.countDocuments({ ...activeFilter, createdAt: { $gte: weekAgo } }),
+        Suggestion.countDocuments({ ...activeFilter, isAnonymous: true }),
+        Suggestion.countDocuments({ ...activeFilter, isRead: { $ne: true } }),
+        Suggestion.countDocuments({ isArchived: true, isDeleted: { $ne: true } }),
+        Suggestion.countDocuments({ isDeleted: true }),
+        Suggestion.countDocuments({})
+      ]);
 
       return {
         total,
+        activeCount: total,
         byCategory,
         byStatus,
         byPriority,
@@ -416,7 +648,9 @@ class SuggestionService {
         identifiedCount: total - anonymousCount,
         unreadCount,
         archivedCount,
-        deletedCount
+        deletedCount,
+        trashCount: deletedCount,
+        grandTotal
       };
     } catch (error) {
       logger.error('Error fetching statistics', { error: error.message });

@@ -28,60 +28,88 @@ import {
 } from '../validators/admin.validator.js';
 import { handleValidationErrors } from '../middleware/validationMiddleware.js';
 import { verifyAdminPassword, requireDeveloperRole } from '../middleware/adminMiddleware.js';
+import studentAuthService from '../services/studentAuthService.js';
+import notificationEmitter from '../utils/notificationEmitter.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
 const SESSION_NAME = process.env.SESSION_NAME || 'innovoice.sid';
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// POST /api/admin/verify - Verify admin password
-router.post(
-  '/verify', 
-  adminVerifyValidator, 
-  handleValidationErrors, 
-  async (req, res) => {
-    try {
-      const dto = new AdminVerifyDTO(req.body);
-      const adminInfo = adminService.verifyPassword(dto.password);
-      
-      if (adminInfo) {
-        // Prevent session fixation: start a new session on login
-        await new Promise((resolve, reject) => {
-          req.session.regenerate((err) => (err ? reject(err) : resolve()));
-        });
+// Allowed origins for SSE stream
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) 
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'];
 
-        req.session.admin = {
-          role: adminInfo.role,
-          label: adminInfo.label,
-          color: adminInfo.color
-        };
-        req.adminInfo = req.session.admin;
+// GET /api/admin/live-stream - Server-Sent Events (SSE) stream for real-time notifications
+router.get('/live-stream', (req, res) => {
+  // Check authorization exclusively through session or verified Google Bearer token
+  let isAuthorized = false;
 
-        adminService.setAdminOnline(req.adminInfo);
-        await adminService.logActivity(req, 'login', {});
-
-        const responseDto = new AdminVerifyResponseDTO(req.adminInfo);
-
-        res.json({
-          success: true,
-          message: 'Password verified',
-          admin: responseDto
-        });
-      } else {
-        res.status(401).json({ 
-          success: false, 
-          message: 'Invalid password' 
-        });
+  if (req.session?.admin) {
+    isAuthorized = true;
+  } else {
+    const token = req.query.token || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
+    if (token) {
+      const decoded = studentAuthService.verifyStudentToken(token);
+      if (decoded?.email) {
+        const info = adminService.getAdminByEmail(decoded.email);
+        if (info) isAuthorized = true;
       }
-    } catch (error) {
-      logger.error('Error in admin verify endpoint', { error: error.message });
-      res.status(500).json({
-        success: false,
-        message: 'Authentication failed. Please try again later.'
-      });
     }
   }
-);
+
+  if (!isAuthorized) {
+    return res.status(401).json({ success: false, message: 'Unauthorized for live stream' });
+  }
+
+  // Determine safe origin for CORS (never echo arbitrary origins with credentials)
+  const reqOrigin = req.headers.origin;
+  const isOriginAllowed = reqOrigin && allowedOrigins.includes(reqOrigin);
+  const streamOrigin = isOriginAllowed ? reqOrigin : allowedOrigins[0];
+
+  // Set SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+    'Access-Control-Allow-Origin': streamOrigin,
+    'Access-Control-Allow-Credentials': 'true'
+  });
+
+  res.write(`event: connected\ndata: ${JSON.stringify({ message: 'Live stream connected', time: new Date() })}\n\n`);
+
+  const onNewSuggestion = (suggestionData) => {
+    try {
+      res.write(`event: new_suggestion\ndata: ${JSON.stringify(suggestionData)}\n\n`);
+    } catch (err) {
+      logger.error('Error sending SSE message', { error: err.message });
+    }
+  };
+
+  notificationEmitter.on('new_suggestion', onNewSuggestion);
+
+  // Keep-alive heartbeat every 20 seconds to prevent proxy drop
+  const keepAliveTimer = setInterval(() => {
+    try {
+      res.write(': keep-alive ping\n\n');
+    } catch (e) {}
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(keepAliveTimer);
+    notificationEmitter.off('new_suggestion', onNewSuggestion);
+  });
+});
+
+// POST /api/admin/verify - Passkey authentication decommissioned
+router.post('/verify', (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Passkey login has been decommissioned for security. Please sign in with your authorized SSG Google Account.'
+  });
+});
 
 // GET /api/admin/me - Validate session and return admin info
 router.get('/me', verifyAdminPassword, async (req, res) => {
@@ -112,33 +140,22 @@ router.post('/logout', verifyAdminPassword, async (req, res) => {
   }
 });
 
-// POST /api/admin/logout-beacon - Handle logout when tab closes
+// POST /api/admin/logout-beacon - Handle offline status when tab closes or reloads
 router.post('/logout-beacon', async (req, res) => {
   try {
-    // Prefer session-based logout beacon
     if (req.session?.admin) {
-      req.adminInfo = req.session.admin;
-      adminService.setAdminOffline(req.adminInfo.label);
-      await adminService.logActivity(req, 'session_ended', {});
-
-      req.session.destroy(() => {
-        res.clearCookie(SESSION_NAME, { sameSite: IS_PROD ? 'none' : 'lax', secure: IS_PROD });
-        res.json({ success: true });
-      });
-      return;
-    }
-
-    // Backward-compatible fallback (older clients)
-    const password = req.query.password;
-    const adminInfo = adminService.getAdminInfo(password);
-
-    if (adminInfo) {
-      adminService.setAdminOffline(adminInfo.label);
-      await adminService.logActivity(
-        { headers: { 'x-admin-password': password }, ip: req.ip, connection: req.connection },
-        'session_ended',
-        {}
-      );
+      adminService.setAdminOffline(req.session.admin.label);
+    } else {
+      const token = req.query.token;
+      if (token) {
+        const decoded = studentAuthService.verifyStudentToken(token);
+        if (decoded?.email) {
+          const info = adminService.getAdminByEmail(decoded.email);
+          if (info) {
+            adminService.setAdminOffline(info.label);
+          }
+        }
+      }
     }
 
     res.json({ success: true });
@@ -148,11 +165,13 @@ router.post('/logout-beacon', async (req, res) => {
   }
 });
 
-// POST /api/admin/heartbeat - Update last seen time
+// POST /api/admin/heartbeat - Update last seen time and return online admins in one roundtrip
 router.post('/heartbeat', verifyAdminPassword, async (req, res) => {
   try {
     adminService.updateHeartbeat(req.adminInfo.label, req.adminInfo);
-    res.json({ success: true });
+    const onlineList = adminService.getOnlineAdmins();
+    const responseDtos = onlineList.map(admin => new OnlineAdminResponseDTO(admin));
+    res.json({ success: true, onlineAdmins: responseDtos });
   } catch (error) {
     logger.error('Error in heartbeat endpoint', { error: error.message });
     res.status(500).json({
@@ -196,8 +215,11 @@ router.get(
         dateFrom: req.query.dateFrom,
         dateTo: req.query.dateTo,
         sort: req.query.sort || 'newest',
+        view: req.query.view,
+        trash: req.query.trash,
         archived: req.query.archived,
-        identity: req.query.identity
+        identity: req.query.identity,
+        id: req.query.id
       };
       
       const pagination = {
@@ -426,16 +448,97 @@ router.put(
   }
 );
 
-// DELETE /api/admin/suggestions/:id - Delete suggestion
-router.delete(
-  '/suggestions/:id', 
-  verifyAdminPassword, 
-  requireDeveloperRole,
-  suggestionIdValidator, 
-  handleValidationErrors, 
+// PUT /api/admin/suggestions/:id/trash - Move suggestion to trash (soft delete)
+router.put(
+  '/suggestions/:id/trash',
+  verifyAdminPassword,
+  suggestionIdValidator,
+  handleValidationErrors,
   async (req, res) => {
     try {
-      const suggestionInfo = await suggestionService.deleteSuggestion(req.params.id);
+      const reason = req.body?.reason || null;
+      const suggestion = await suggestionService.moveToTrash(req.params.id, req.adminInfo, reason);
+      
+      if (!suggestion) {
+        return res.status(404).json({
+          success: false,
+          message: 'Suggestion not found'
+        });
+      }
+
+      await adminService.logActivity(req, 'delete_suggestion', {
+        suggestionId: suggestion._id,
+        suggestionTitle: suggestion.title,
+        suggestionTrackingCode: suggestion.trackingCode,
+        extra: { type: 'soft_delete', to: 'trash', reason: suggestion.deletedReason }
+      });
+
+      const responseDto = new SuggestionResponseDTO(suggestion);
+      res.json({
+        success: true,
+        message: 'Suggestion moved to trash',
+        data: responseDto
+      });
+    } catch (error) {
+      logger.error('Error in move to trash endpoint', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to move suggestion to trash'
+      });
+    }
+  }
+);
+
+// PUT /api/admin/suggestions/:id/restore - Restore suggestion from trash
+router.put(
+  '/suggestions/:id/restore',
+  verifyAdminPassword,
+  suggestionIdValidator,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const suggestion = await suggestionService.restoreFromTrash(req.params.id, req.adminInfo);
+      
+      if (!suggestion) {
+        return res.status(404).json({
+          success: false,
+          message: 'Suggestion not found'
+        });
+      }
+
+      await adminService.logActivity(req, 'restore_suggestion', {
+        suggestionId: suggestion._id,
+        suggestionTitle: suggestion.title,
+        suggestionTrackingCode: suggestion.trackingCode,
+        extra: { from: 'trash', to: 'inbox' }
+      });
+
+      const responseDto = new SuggestionResponseDTO(suggestion);
+      res.json({
+        success: true,
+        message: 'Suggestion restored to inbox',
+        data: responseDto
+      });
+    } catch (error) {
+      logger.error('Error in restore suggestion endpoint', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to restore suggestion'
+      });
+    }
+  }
+);
+
+// DELETE /api/admin/suggestions/:id/permanent - Permanently delete suggestion
+router.delete(
+  '/suggestions/:id/permanent',
+  verifyAdminPassword,
+  requireDeveloperRole,
+  suggestionIdValidator,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const suggestionInfo = await suggestionService.permanentDelete(req.params.id, req.adminInfo);
       
       if (!suggestionInfo) {
         return res.status(404).json({
@@ -444,7 +547,7 @@ router.delete(
         });
       }
 
-      await adminService.logActivity(req, 'delete_suggestion', {
+      await adminService.logActivity(req, 'permanent_delete', {
         suggestionId: suggestionInfo.id,
         suggestionTitle: suggestionInfo.title,
         suggestionTrackingCode: suggestionInfo.trackingCode
@@ -452,7 +555,46 @@ router.delete(
 
       res.json({
         success: true,
-        message: 'Suggestion deleted successfully'
+        message: 'Suggestion permanently deleted'
+      });
+    } catch (error) {
+      logger.error('Error in permanent delete endpoint', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to permanently delete suggestion'
+      });
+    }
+  }
+);
+
+// DELETE /api/admin/suggestions/:id - Soft-delete (backward compatible)
+router.delete(
+  '/suggestions/:id', 
+  verifyAdminPassword, 
+  suggestionIdValidator, 
+  handleValidationErrors, 
+  async (req, res) => {
+    try {
+      const reason = req.body?.reason || null;
+      const suggestion = await suggestionService.moveToTrash(req.params.id, req.adminInfo, reason);
+      
+      if (!suggestion) {
+        return res.status(404).json({
+          success: false,
+          message: 'Suggestion not found'
+        });
+      }
+
+      await adminService.logActivity(req, 'delete_suggestion', {
+        suggestionId: suggestion._id,
+        suggestionTitle: suggestion.title,
+        suggestionTrackingCode: suggestion.trackingCode,
+        extra: { type: 'soft_delete', to: 'trash', reason: suggestion.deletedReason }
+      });
+
+      res.json({
+        success: true,
+        message: 'Suggestion moved to trash'
       });
     } catch (error) {
       logger.error('Error in delete suggestion endpoint', { error: error.message });
@@ -464,7 +606,107 @@ router.delete(
   }
 );
 
-// POST /api/admin/suggestions/bulk-delete - Bulk delete suggestions
+// POST /api/admin/suggestions/bulk-trash - Bulk soft delete
+router.post(
+  '/suggestions/bulk-trash',
+  verifyAdminPassword,
+  bulkDeleteValidator,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const dto = new BulkDeleteDTO(req.body);
+      if (dto.ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No suggestion IDs provided'
+        });
+      }
+
+      const reason = req.body?.reason || null;
+      const result = await suggestionService.bulkTrash(dto.ids, req.adminInfo, reason);
+      await adminService.logActivity(req, 'bulk_delete', {
+        extra: { count: result.trashedCount, action: 'bulk_trash', reason }
+      });
+
+      res.json({
+        success: true,
+        message: `${result.trashedCount} suggestion(s) moved to trash`,
+        trashedCount: result.trashedCount
+      });
+    } catch (error) {
+      logger.error('Error in bulk trash endpoint', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to move suggestions to trash'
+      });
+    }
+  }
+);
+
+// POST /api/admin/suggestions/bulk-restore - Bulk restore
+router.post(
+  '/suggestions/bulk-restore',
+  verifyAdminPassword,
+  bulkDeleteValidator,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const dto = new BulkDeleteDTO(req.body);
+      if (dto.ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No suggestion IDs provided'
+        });
+      }
+
+      const result = await suggestionService.bulkRestore(dto.ids, req.adminInfo);
+      await adminService.logActivity(req, 'restore_suggestion', {
+        extra: { count: result.restoredCount, action: 'bulk_restore' }
+      });
+
+      res.json({
+        success: true,
+        message: `${result.restoredCount} suggestion(s) restored`,
+        restoredCount: result.restoredCount
+      });
+    } catch (error) {
+      logger.error('Error in bulk restore endpoint', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to restore suggestions'
+      });
+    }
+  }
+);
+
+// POST /api/admin/suggestions/empty-trash - Empty all trash
+router.post(
+  '/suggestions/empty-trash',
+  verifyAdminPassword,
+  requireDeveloperRole,
+  async (req, res) => {
+    try {
+      const result = await suggestionService.emptyTrash(req.adminInfo);
+      await adminService.logActivity(req, 'empty_trash', {
+        extra: { count: result.deletedCount }
+      });
+
+      res.json({
+        success: true,
+        message: `Trash emptied (${result.deletedCount} items permanently deleted)`,
+        deletedCount: result.deletedCount
+      });
+    } catch (error) {
+      logger.error('Error in empty trash endpoint', { error: error.message });
+      res.status(500).json({
+        success: false,
+        message: 'Failed to empty trash'
+      });
+    }
+  }
+);
+
+// POST /api/admin/suggestions/bulk-delete - Bulk permanent delete
 router.post(
   '/suggestions/bulk-delete', 
   verifyAdminPassword, 
@@ -482,7 +724,7 @@ router.post(
         });
       }
 
-      const result = await suggestionService.bulkDelete(dto.ids);
+      const result = await suggestionService.bulkPermanentDelete(dto.ids, req.adminInfo);
 
       await adminService.logActivity(req, 'bulk_delete', {
         extra: { 
@@ -493,7 +735,7 @@ router.post(
 
       res.json({
         success: true,
-        message: `${result.deletedCount} suggestions deleted successfully`,
+        message: `${result.deletedCount} suggestions permanently deleted`,
         deletedCount: result.deletedCount
       });
     } catch (error) {

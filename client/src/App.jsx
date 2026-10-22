@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { IconDeviceMobile, IconShare, IconX } from '@tabler/icons-react';
 import LoadingScreen from './components/LoadingScreen/LoadingScreen';
 import SuggestionForm from './components/SuggestionForm/SuggestionForm';
 import AdminPanel from './components/AdminPanel/AdminPanel';
+import NotFound from './components/NotFound/NotFound';
 import './styles/global.scss';
 
 // PWA Install Prompt Component
@@ -59,23 +61,25 @@ const InstallPrompt = ({ onClose }) => {
   return (
     <div className="pwa-install-prompt">
       <div className="pwa-install-content">
-        <div className="pwa-install-icon">📱</div>
+        <div className="pwa-install-icon">
+          <IconDeviceMobile size={24} color="#fca5a5" />
+        </div>
         <div className="pwa-install-text">
           <strong>Install SSG InnoVoice</strong>
           {isIOS ? (
-            <p>Tap <span className="ios-share">⬆️</span> then "Add to Home Screen"</p>
+            <p>Tap <IconShare size={14} style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> then "Add to Home Screen"</p>
           ) : (
-            <p>Add to your home screen for quick access</p>
+            <p>Add to your home screen for instant 24/7 access</p>
           )}
         </div>
         <div className="pwa-install-actions">
           {!isIOS && (
             <button className="pwa-install-btn" onClick={handleInstall}>
-              Install
+              Install App
             </button>
           )}
-          <button className="pwa-dismiss-btn" onClick={handleDismiss}>
-            ✕
+          <button className="pwa-dismiss-btn" onClick={handleDismiss} aria-label="Close">
+            <IconX size={16} />
           </button>
         </div>
       </div>
@@ -100,6 +104,7 @@ function App() {
           <Routes>
             <Route path="/" element={<SuggestionForm />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </>
       )}

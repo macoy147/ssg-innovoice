@@ -1,5 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { IconDeviceMobile, IconX } from '@tabler/icons-react';
 import { QR_CONFIG, APP_NAME } from '../../config/app';
 import './QRCodeModal.scss';
 
@@ -35,16 +36,19 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
           }}
         >
           <div className="qr-modal-header">
-            <h2>📱 {qrTitle}</h2>
+            <div className="modal-title-lockup">
+              <IconDeviceMobile size={22} className="modal-header-icon" />
+              <h2>{qrTitle}</h2>
+            </div>
             <motion.button 
               className="close-btn" 
               onClick={onClose} 
               aria-label="Close"
-              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               transition={{ duration: 0.2 }}
             >
-              ×
+              <IconX size={18} />
             </motion.button>
           </div>
 

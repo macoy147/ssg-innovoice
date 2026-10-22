@@ -12,20 +12,64 @@ import {
 import { handleValidationErrors } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
 
+import { optionalStudentAuth } from '../middleware/studentMiddleware.js';
+import studentAuthService from '../services/studentAuthService.js';
+import notificationEmitter from '../utils/notificationEmitter.js';
+
 const router = express.Router();
 
 // POST /api/suggestions - Create new suggestion
 router.post(
   '/', 
+  optionalStudentAuth,
   createSuggestionValidator, 
   handleValidationErrors, 
   async (req, res) => {
     try {
-      // Map request to DTO
-      const dto = new CreateSuggestionDTO(req.body);
+      const studentId = req.studentUser?._id || req.studentId;
+
+      // Map request to DTO with authenticated user link
+      const dto = new CreateSuggestionDTO({
+        ...req.body,
+        userId: studentId || null
+      });
       
       // Process through service
       const { suggestion, aiAnalyzed } = await suggestionService.createSuggestion(dto);
+
+      // If student is logged in, attach tracking code to their saved reports
+      if (studentId) {
+        try {
+          await studentAuthService.attachTrackingCodeToStudent(
+            studentId,
+            suggestion.trackingCode,
+            suggestion.title,
+            true
+          );
+        } catch (attachErr) {
+          logger.warn('Failed to attach tracking code to student record', { error: attachErr.message });
+        }
+      }
+
+      // Broadcast real-time live notification to all online admins
+      try {
+        notificationEmitter.emit('new_suggestion', {
+          _id: suggestion._id,
+          trackingCode: suggestion.trackingCode,
+          title: suggestion.title,
+          category: suggestion.category,
+          priority: suggestion.priority,
+          type: suggestion.type,
+          isAnonymous: suggestion.isAnonymous,
+          submitterName: suggestion.submitter?.name || '',
+          submitterEmail: suggestion.submitter?.email || '',
+          status: suggestion.status,
+          isRead: suggestion.isRead,
+          createdAt: suggestion.createdAt
+        });
+      } catch (broadcastErr) {
+        logger.warn('Failed to broadcast real-time notification', { error: broadcastErr.message });
+      }
 
       // Map to response DTO
       const responseDto = new CreateSuggestionResponseDTO(suggestion, aiAnalyzed);

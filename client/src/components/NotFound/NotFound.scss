@@ -1,0 +1,242 @@
+@use '../../styles/variables' as *;
+
+.not-found-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  background: $bg-main;
+  position: relative;
+  overflow: hidden;
+
+  // Subtle institutional ambient glow
+  &::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(159, 18, 57, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+.not-found-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 540px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px solid $border-color;
+  box-shadow: $shadow-xl;
+  padding: 2.25rem 2rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: notFoundFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+
+  // Institutional top accent stroke
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $primary-accent 0%, $accent-hover 100%);
+  }
+}
+
+.not-found-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: $surface-accent-soft;
+  border: 1px solid rgba(159, 18, 57, 0.25);
+  padding: 0.3rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: $primary-accent;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.25rem;
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $primary-accent;
+    animation: badgePulse 2s infinite ease-in-out;
+  }
+}
+
+.illustration-wrapper {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .not-found-gif {
+    width: 100%;
+    height: auto;
+    max-height: 240px;
+    object-fit: contain;
+    border-radius: 16px;
+    filter: drop-shadow(0 8px 24px rgba(17, 24, 39, 0.08));
+    animation: floatSubtle 4s ease-in-out infinite;
+  }
+}
+
+.not-found-content {
+  margin-bottom: 1.75rem;
+
+  .not-found-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: $text-primary;
+    margin: 0 0 0.6rem 0;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+  }
+
+  .not-found-desc {
+    font-size: 0.92rem;
+    color: $text-secondary;
+    margin: 0 auto;
+    max-width: 440px;
+    line-height: 1.55;
+    font-weight: 500;
+  }
+}
+
+.not-found-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 480px) {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.4rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+  }
+
+  .btn-primary-home {
+    background: $primary-accent;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(159, 18, 57, 0.25);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(159, 18, 57, 0.35);
+      background: $accent-hover;
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .btn-secondary-track {
+    background: #ffffff;
+    color: $bg-secondary;
+    border: 1.5px solid $border-color;
+
+    &:hover {
+      background: #F3F4F6;
+      border-color: $text-secondary;
+      transform: translateY(-2px);
+      color: $text-primary;
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+.not-found-credits {
+  padding-top: 1rem;
+  border-top: 1px solid $border-light;
+  width: 100%;
+
+  .storyset-link {
+    font-size: 0.75rem;
+    color: $text-secondary;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $primary-accent;
+      text-decoration: underline;
+    }
+  }
+}
+
+.not-found-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.75rem;
+  font-size: 0.78rem;
+  color: $text-muted;
+  text-align: center;
+  font-weight: 500;
+}
+
+// Animations
+@keyframes notFoundFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes floatSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}

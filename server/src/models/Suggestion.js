@@ -27,6 +27,12 @@ const suggestionSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'StudentUser',
+    default: null,
+    index: true
+  },
   submitter: {
     name: {
       type: String,
@@ -111,10 +117,32 @@ const suggestionSchema = new mongoose.Schema({
   },
   deletedAt: {
     type: Date
+  },
+  deletedBy: {
+    type: String
+  },
+  deletedByRole: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  deletedReason: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: null
   }
 }, {
   timestamps: true
 });
+
+// Compound indexes for optimal admin filtering, sorting, and stats aggregation
+suggestionSchema.index({ isDeleted: 1, isArchived: 1, createdAt: -1 });
+suggestionSchema.index({ isDeleted: 1, isArchived: 1, status: 1 });
+suggestionSchema.index({ isDeleted: 1, isArchived: 1, category: 1 });
+suggestionSchema.index({ isDeleted: 1, isArchived: 1, priority: 1 });
+suggestionSchema.index({ isDeleted: 1, isArchived: 1, isRead: 1 });
+suggestionSchema.index({ isDeleted: 1, isArchived: 1, isAnonymous: 1 });
 
 // Generate unique tracking code before validation
 suggestionSchema.pre('validate', function(next) {
@@ -126,6 +154,13 @@ suggestionSchema.pre('validate', function(next) {
   }
   next();
 });
+
+// Virtual for user_id alias
+suggestionSchema.virtual('user_id').get(function() {
+  return this.userId;
+});
+suggestionSchema.set('toJSON', { virtuals: true });
+suggestionSchema.set('toObject', { virtuals: true });
 
 const Suggestion = mongoose.model('Suggestion', suggestionSchema);
 

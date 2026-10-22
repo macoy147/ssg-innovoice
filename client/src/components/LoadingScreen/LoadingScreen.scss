@@ -10,7 +10,7 @@
   z-index: 9999;
   overflow: hidden;
   @include flex-center;
-  background: linear-gradient(135deg, $color-black 0%, $color-grey-darker 50%, $primary-red-darker 100%);
+  background: $gradient-hero;
 }
 
 .loading-background {

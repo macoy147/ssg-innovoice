@@ -25,6 +25,8 @@
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  animation: smoothModalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.3),
     0 8px 25px rgba(0, 0, 0, 0.2);
@@ -267,6 +269,118 @@
     background: #fee2e2;
     color: #991b1b;
   }
+
+  &.status-dismissed,
+  &.status-purged {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+}
+
+// Institutional Notice Banner for Dismissed / Declined
+.institutional-notice-banner {
+  border-radius: $radius-md;
+  margin-bottom: $spacing-5;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+
+  &.notice-rejected {
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+
+    .notice-header {
+      background: rgba(239, 68, 68, 0.08);
+      border-bottom: 1px solid #fecaca;
+
+      .notice-badge {
+        color: #991b1b;
+        svg { color: #dc2626; }
+      }
+
+      .notice-date {
+        color: #b91c1c;
+      }
+    }
+
+    .notice-body {
+      .notice-reason-title {
+        color: #991b1b;
+      }
+      .notice-reason-text {
+        color: #7f1d1d;
+      }
+    }
+  }
+
+  &.notice-dismissed,
+  &.notice-purged {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+
+    .notice-header {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+
+      .notice-badge {
+        color: #334155;
+        svg { color: #64748b; }
+      }
+
+      .notice-date {
+        color: #64748b;
+      }
+    }
+
+    .notice-body {
+      .notice-reason-title {
+        color: #334155;
+      }
+      .notice-reason-text {
+        color: #475569;
+      }
+    }
+  }
+
+  .notice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-3 $spacing-4;
+    gap: $spacing-2;
+
+    .notice-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: $text-sm;
+    }
+
+    .notice-date {
+      font-size: $text-xs;
+      font-weight: 500;
+    }
+  }
+
+  .notice-body {
+    padding: $spacing-4;
+
+    .notice-reason-title {
+      margin: 0 0 6px;
+      font-size: $text-xs;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+
+    .notice-reason-text {
+      margin: 0;
+      font-size: $text-sm;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+  }
 }
 
 // Progress Timeline
@@ -307,10 +421,10 @@
       }
       
       &.current {
-        background: $primary-red;
-        border-color: $primary-red;
-        color: $color-white;
-        box-shadow: 0 0 0 4px rgba($primary-red, 0.2);
+        background: $primary-accent;
+        border-color: $primary-accent;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(159, 18, 57, 0.25);
       }
     }
     

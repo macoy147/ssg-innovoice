@@ -1,52 +1,24 @@
 import ActivityLog from '../models/ActivityLog.js';
+import StudentUser from '../models/StudentUser.js';
 import logger from '../utils/logger.js';
 
-// Admin accounts configuration
-const ADMIN_ACCOUNTS = {
-  'ssg2526pres': {
-    role: 'executive',
-    label: 'President',
-    color: '#8b5cf6'
-  },
-  'ssg2526vp': {
-    role: 'executive',
-    label: 'Vice President',
-    color: '#ec4899'
-  },
-  'ssg2526cote': {
-    role: 'executive',
-    label: 'CoTE Governor',
-    color: '#3b82f6'
-  },
-  'ssg2526coed': {
-    role: 'executive',
-    label: 'CoEd Governor',
-    color: '#14b8a6'
-  },
-  'ssg2526presssec': {
-    role: 'press_secretary',
-    label: 'Press Secretary',
-    color: '#f59e0b'
-  },
-  'ssg2526netsec': {
-    role: 'network_secretary',
-    label: 'Secretary on Networks',
-    color: '#10b981'
-  },
-  'ssg2526dev': {
+// Default Whitelisted Google Admin Accounts (RBAC)
+// Recommended: override via ADMIN_EMAILS in server/.env
+const DEFAULT_GOOGLE_ADMIN_EMAILS = {
+  'montellano.marco.c@gmail.com': {
     role: 'developer',
     label: 'Developer',
     color: '#6366f1'
   },
-  'ssg2526mathrep': {
+  'montellanomarco.it@gmail.com': {
     role: 'executive',
-    label: 'BSED-Math Representative',
-    color: '#f472b6'
+    label: 'SSG President',
+    color: '#8b5cf6'
   },
-  'ssg2526smm': {
-    role: 'press_secretary',
-    label: 'Social Media Manager',
-    color: '#06b6d4'
+  'ctu.montellano.marco@gmail.com': {
+    role: 'executive',
+    label: 'Vice President',
+    color: '#ec4899'
   }
 };
 
@@ -54,207 +26,355 @@ const ADMIN_ACCOUNTS = {
 const onlineAdmins = new Map();
 
 class AdminService {
-  getAdminInfo(password) {
-    return ADMIN_ACCOUNTS[password] || null;
-  }
+  /**
+   * Check if a Google email address is an authorized admin
+   * Evaluates environment variable ADMIN_EMAILS / ADMIN_WHITELIST first
+   * @param {string} email 
+   * @returns {{ role: string, label: string, color: string } | null}
+   */
+  getAdminByEmail(email) {
+    if (!email) return null;
+    const cleanEmail = email.toLowerCase().trim();
 
-  verifyPassword(password) {
-    const adminInfo = this.getAdminInfo(password);
-    if (adminInfo) {
-      logger.info('Admin login successful', { label: adminInfo.label, role: adminInfo.role });
-      return adminInfo;
+    // 1. Check environment variable whitelist (format: email:role:label:color,email2:role:label:color)
+    const envWhitelist = process.env.ADMIN_WHITELIST || process.env.ADMIN_EMAILS;
+    if (envWhitelist) {
+      const entries = envWhitelist.split(',');
+      for (const entry of entries) {
+        const parts = entry.split(':');
+        const e = parts[0]?.trim().toLowerCase();
+        if (e && e === cleanEmail) {
+          return {
+            role: parts[1]?.trim() || 'executive',
+            label: parts[2]?.trim() || 'SSG Officer',
+            color: parts[3]?.trim() || '#8b5cf6'
+          };
+        }
+      }
     }
-    logger.warn('Failed admin login attempt');
+
+    // 2. Fallback to default institutional administration accounts
+    if (DEFAULT_GOOGLE_ADMIN_EMAILS[cleanEmail]) {
+      return DEFAULT_GOOGLE_ADMIN_EMAILS[cleanEmail];
+    }
+
     return null;
   }
 
+  /**
+   * Return a dictionary of all recognized admin accounts combining env and defaults
+   * @returns {Object.<string, { role: string, label: string, color: string }>}
+   */
+  getAllAdminDirectory() {
+    const directory = { ...DEFAULT_GOOGLE_ADMIN_EMAILS };
+    const envWhitelist = process.env.ADMIN_WHITELIST || process.env.ADMIN_EMAILS;
+    if (envWhitelist) {
+      const entries = envWhitelist.split(',');
+      for (const entry of entries) {
+        const parts = entry.split(':');
+        const e = parts[0]?.trim().toLowerCase();
+        if (e) {
+          directory[e] = {
+            role: parts[1]?.trim() || 'executive',
+            label: parts[2]?.trim() || 'SSG Officer',
+            color: parts[3]?.trim() || '#8b5cf6'
+          };
+        }
+      }
+    }
+    return directory;
+  }
+
   setAdminOnline(adminInfo) {
+    if (!adminInfo?.label) return;
     onlineAdmins.set(adminInfo.label, {
       ...adminInfo,
       lastSeen: new Date(),
       loginTime: new Date()
     });
+    logger.info(`Admin set online: ${adminInfo.label}`);
   }
 
-  setAdminOffline(label) {
-    onlineAdmins.delete(label);
+  setAdminOffline(adminLabel) {
+    if (!adminLabel) return;
+    onlineAdmins.delete(adminLabel);
+    logger.info(`Admin set offline: ${adminLabel}`);
   }
 
-  updateHeartbeat(label, adminInfo) {
-    if (onlineAdmins.has(label)) {
-      const existing = onlineAdmins.get(label);
-      onlineAdmins.set(label, {
-        ...existing,
-        lastSeen: new Date()
-      });
-    } else {
-      onlineAdmins.set(label, {
-        ...adminInfo,
-        lastSeen: new Date(),
-        loginTime: new Date()
-      });
-    }
+  updateHeartbeat(adminLabel, adminInfo) {
+    if (!adminLabel) return;
+    const existing = onlineAdmins.get(adminLabel);
+    onlineAdmins.set(adminLabel, {
+      ...(existing || adminInfo),
+      lastSeen: new Date()
+    });
   }
 
   getOnlineAdmins() {
-    const now = new Date();
-    const onlineTimeout = 35 * 1000; // 35 seconds
-    
-    const onlineList = [];
-    
-    onlineAdmins.forEach((admin, label) => {
-      const timeSinceLastSeen = now - new Date(admin.lastSeen);
-      if (timeSinceLastSeen < onlineTimeout) {
-        onlineList.push(admin);
-      } else {
-        // Remove stale entries
-        onlineAdmins.delete(label);
-      }
-    });
-    
-    return onlineList;
+    this.cleanupOfflineAdmins();
+    return Array.from(onlineAdmins.values());
   }
 
-  async logActivity(req, action, details = {}) {
-    try {
-      const adminInfo =
-        req.adminInfo ||
-        req.session?.admin ||
-        this.getAdminInfo(req.headers['x-admin-password']);
-      
-      if (!adminInfo) return;
-      
-      const log = new ActivityLog({
-        adminRole: adminInfo.role,
-        adminLabel: adminInfo.label,
-        action,
-        suggestionId: details.suggestionId || null,
-        suggestionTitle: details.suggestionTitle || null,
-        suggestionTrackingCode: details.suggestionTrackingCode || null,
-        details: details.extra || {},
-        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress,
-        userAgent: req.headers['user-agent']
-      });
-      
-      await log.save();
-      logger.debug('Activity logged', { action, adminLabel: adminInfo.label });
-    } catch (error) {
-      logger.error('Error logging activity', { error: error.message });
+  cleanupOfflineAdmins() {
+    const TIMEOUT_MS = 60000; // 1 minute inactivity timeout
+    const now = Date.now();
+    for (const [label, admin] of onlineAdmins.entries()) {
+      if (now - new Date(admin.lastSeen).getTime() > TIMEOUT_MS) {
+        onlineAdmins.delete(label);
+        logger.info(`Cleaned up inactive admin: ${label}`);
+      }
     }
   }
 
-  async getActivityLogs(filters, pagination) {
+  /**
+   * Log an administrative activity
+   */
+  async logActivity(req, action, { suggestionId = null, suggestionTitle = null, suggestionTrackingCode = null, details = {}, extra = null } = {}) {
+    try {
+      const mergedDetails = { ...(details || {}), ...(extra || {}) };
+      const adminRole = req.adminInfo?.role || 'executive';
+      const adminLabel = req.adminInfo?.label || 'SSG Officer';
+      let adminName = req.adminInfo?.name || req.studentUser?.name || null;
+      let adminEmail = req.adminInfo?.email || req.studentUser?.email || null;
+      let adminPicture = req.adminInfo?.picture || req.studentUser?.picture || null;
+
+      // Auto-resolve Gmail profile from StudentUser or whitelist if missing
+      if (!adminPicture && adminEmail) {
+        const student = await StudentUser.findOne({ email: adminEmail.toLowerCase().trim() }).lean();
+        if (student?.picture) {
+          adminPicture = student.picture;
+          if (!adminName) adminName = student.name;
+        }
+      }
+      if (!adminPicture) {
+        const adminDirectory = this.getAllAdminDirectory();
+        for (const [gEmail, gInfo] of Object.entries(adminDirectory)) {
+          if (gInfo.role === adminRole || gInfo.label === adminLabel) {
+            const student = await StudentUser.findOne({ email: gEmail }).lean();
+            if (student?.picture) {
+              adminPicture = student.picture;
+              if (!adminName) adminName = student.name;
+              if (!adminEmail) adminEmail = gEmail;
+              break;
+            }
+          }
+        }
+      }
+
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
+      const userAgent = req.headers['user-agent'];
+
+      await ActivityLog.create({
+        adminRole,
+        adminLabel,
+        adminName,
+        adminEmail,
+        adminPicture,
+        action,
+        suggestionId,
+        suggestionTitle,
+        suggestionTrackingCode,
+        details: mergedDetails,
+        ipAddress,
+        userAgent
+      });
+    } catch (err) {
+      logger.error('Failed to log admin activity', { error: err.message, action });
+    }
+  }
+
+  /**
+   * Retrieve activity logs with filters and pagination
+   */
+  async getActivityLogs(filters = {}, pagination = { page: 1, limit: 50 }) {
     try {
       const query = {};
-      
+
       if (filters.adminRole && filters.adminRole !== 'all') {
         query.adminRole = filters.adminRole;
       }
-      
+
       if (filters.action && filters.action !== 'all') {
         query.action = filters.action;
       }
-      
+
+      if (filters.search) {
+        const cleanSearch = filters.search.trim().replace(/^#/, '');
+        if (cleanSearch) {
+          const escaped = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const searchRegex = new RegExp(escaped, 'i');
+          query.$or = [
+            { adminLabel: searchRegex },
+            { adminName: searchRegex },
+            { adminEmail: searchRegex },
+            { suggestionTitle: searchRegex },
+            { suggestionTrackingCode: searchRegex }
+          ];
+        }
+      }
+
       if (filters.dateFrom || filters.dateTo) {
         query.createdAt = {};
         if (filters.dateFrom) query.createdAt.$gte = new Date(filters.dateFrom);
         if (filters.dateTo) query.createdAt.$lte = new Date(filters.dateTo);
       }
-      
-      if (filters.search) {
-        query.$or = [
-          { suggestionTrackingCode: { $regex: filters.search, $options: 'i' } },
-          { suggestionTitle: { $regex: filters.search, $options: 'i' } },
-          { adminLabel: { $regex: filters.search, $options: 'i' } }
-        ];
-      }
-      
-      const count = await ActivityLog.countDocuments(query);
-      
-      const logs = await ActivityLog.find(query)
-        .sort({ createdAt: -1 })
-        .limit(pagination.limit)
-        .skip((pagination.page - 1) * pagination.limit);
-      
+
+      const page = Math.max(1, parseInt(pagination.page) || 1);
+      const limit = Math.max(1, Math.min(100, parseInt(pagination.limit) || 50));
+      const skip = (page - 1) * limit;
+
+      const [rawLogs, total] = await Promise.all([
+        ActivityLog.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        ActivityLog.countDocuments(query)
+      ]);
+
+      // Enrich logs with Gmail profile picture - only query relevant admin candidate emails (efficient)
+      const adminDirectory = this.getAllAdminDirectory();
+      const candidateEmails = new Set(Object.keys(adminDirectory));
+      rawLogs.forEach(l => {
+        if (l.adminEmail) candidateEmails.add(l.adminEmail.toLowerCase().trim());
+      });
+
+      const registeredUsers = await StudentUser.find({
+        email: { $in: Array.from(candidateEmails) },
+        picture: { $exists: true, $ne: null }
+      })
+        .select('email name picture')
+        .lean();
+
+      const userMap = new Map();
+      registeredUsers.forEach(u => {
+        if (u.email) userMap.set(u.email.toLowerCase().trim(), u);
+      });
+
+      const logs = rawLogs.map(log => {
+        let pic = log.adminPicture;
+        let name = log.adminName;
+        const email = (log.adminEmail || '').toLowerCase().trim();
+
+        if (!pic && email && userMap.has(email)) {
+          pic = userMap.get(email).picture;
+          if (!name) name = userMap.get(email).name;
+        }
+
+        if (!pic) {
+          for (const [gEmail, gInfo] of Object.entries(adminDirectory)) {
+            if (email === gEmail || gInfo.role === log.adminRole || gInfo.label === log.adminLabel) {
+              if (userMap.has(gEmail)) {
+                pic = userMap.get(gEmail).picture;
+                if (!name) name = userMap.get(gEmail).name;
+                break;
+              }
+            }
+          }
+        }
+
+        return {
+          ...log,
+          adminPicture: pic || log.adminPicture,
+          adminName: name || log.adminName
+        };
+      });
+
       return {
         logs,
+        data: logs,
         pagination: {
-          total: count,
-          page: pagination.page,
-          pages: Math.ceil(count / pagination.limit),
-          limit: pagination.limit
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
         }
       };
-    } catch (error) {
-      logger.error('Error fetching activity logs', { error: error.message });
-      throw error;
+    } catch (err) {
+      logger.error('Error fetching activity logs', { error: err.message });
+      throw err;
     }
   }
 
+  /**
+   * Get activity log statistics
+   */
   async getActivityLogStats() {
     try {
-      const totalLogs = await ActivityLog.countDocuments();
-      
-      const byAdmin = await ActivityLog.aggregate([
-        { $group: { _id: '$adminRole', count: { $sum: 1 }, label: { $first: '$adminLabel' } } },
-        { $sort: { count: -1 } }
-      ]);
-      
-      const byAction = await ActivityLog.aggregate([
-        { $group: { _id: '$action', count: { $sum: 1 } } },
-        { $sort: { count: -1 } }
-      ]);
-      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayCount = await ActivityLog.countDocuments({ createdAt: { $gte: today } });
-      
+
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekCount = await ActivityLog.countDocuments({ createdAt: { $gte: weekAgo } });
-      
+      weekAgo.setHours(0, 0, 0, 0);
+
+      const [totalLogs, todayCount, weekCount, roleStats, actionStats] = await Promise.all([
+        ActivityLog.countDocuments(),
+        ActivityLog.countDocuments({ createdAt: { $gte: today } }),
+        ActivityLog.countDocuments({ createdAt: { $gte: weekAgo } }),
+        ActivityLog.aggregate([
+          { $group: { _id: '$adminRole', count: { $sum: 1 }, label: { $first: '$adminLabel' } } }
+        ]),
+        ActivityLog.aggregate([
+          { $group: { _id: '$action', count: { $sum: 1 } } }
+        ])
+      ]);
+
+      const byAdmin = roleStats.map(r => ({
+        _id: r._id,
+        label: r.label || r._id,
+        count: r.count
+      }));
+
       return {
+        total: totalLogs,
         totalLogs,
-        byAdmin,
-        byAction,
         todayCount,
-        weekCount
+        weekCount,
+        byAdmin,
+        byRole: roleStats.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
+        byAction: actionStats.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {})
       };
-    } catch (error) {
-      logger.error('Error fetching activity log stats', { error: error.message });
-      throw error;
+    } catch (err) {
+      logger.error('Error fetching activity stats', { error: err.message });
+      throw err;
     }
   }
 
+  /**
+   * Count deprecated logs for cleanup
+   */
   async getDeprecatedLogsCount() {
     try {
-      const deprecatedRoles = ['president', 'vice_president', 'cote_governor', 'coed_governor', 'admin', 'executive_admin'];
-      
-      const count = await ActivityLog.countDocuments({
-        adminRole: { $in: deprecatedRoles }
-      });
-      
+      const validRoles = ['executive', 'press_secretary', 'network_secretary', 'developer'];
+      const [count, deprecatedRoles] = await Promise.all([
+        ActivityLog.countDocuments({
+          adminRole: { $nin: validRoles }
+        }),
+        ActivityLog.distinct('adminRole', {
+          adminRole: { $nin: validRoles }
+        })
+      ]);
       return { count, deprecatedRoles };
-    } catch (error) {
-      logger.error('Error counting deprecated logs', { error: error.message });
-      throw error;
+    } catch (err) {
+      logger.error('Error checking deprecated logs count', { error: err.message });
+      return { count: 0, deprecatedRoles: [] };
     }
   }
 
+  /**
+   * Cleanup deprecated role logs
+   */
   async cleanupDeprecatedLogs() {
     try {
-      const deprecatedRoles = ['president', 'vice_president', 'cote_governor', 'coed_governor', 'admin', 'executive_admin'];
-      
+      const validRoles = ['executive', 'press_secretary', 'network_secretary', 'developer'];
       const result = await ActivityLog.deleteMany({
-        adminRole: { $in: deprecatedRoles }
+        adminRole: { $nin: validRoles }
       });
-      
-      logger.info('Deprecated logs cleaned up', { deletedCount: result.deletedCount });
-      
       return result.deletedCount;
-    } catch (error) {
-      logger.error('Error cleaning up deprecated logs', { error: error.message });
-      throw error;
+    } catch (err) {
+      logger.error('Error cleaning up deprecated logs', { error: err.message });
+      throw err;
     }
   }
 }

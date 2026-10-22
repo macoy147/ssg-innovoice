@@ -7,6 +7,7 @@ export class CreateSuggestionDTO {
     this.content = data.content?.trim();
     this.isAnonymous = Boolean(data.isAnonymous);
     this.image = data.image;
+    this.userId = data.userId || null;
     
     // Only include submitter if not anonymous
     if (!this.isAnonymous && data.submitter) {
@@ -61,6 +62,11 @@ export class SuggestionResponseDTO {
     this.isArchived = suggestion.isArchived;
     this.archivedAt = suggestion.archivedAt;
     this.archivedBy = suggestion.archivedBy;
+    this.isDeleted = suggestion.isDeleted || false;
+    this.deletedAt = suggestion.deletedAt || null;
+    this.deletedBy = suggestion.deletedBy || null;
+    this.deletedByRole = suggestion.deletedByRole || null;
+    this.deletedReason = suggestion.deletedReason || null;
     this.statusHistory = suggestion.statusHistory;
     this.createdAt = suggestion.createdAt;
     this.updatedAt = suggestion.updatedAt;
@@ -86,9 +92,34 @@ export class PublicSuggestionResponseDTO {
     this.category = suggestion.category;
     this.title = suggestion.title;
     this.content = suggestion.content;
-    this.status = suggestion.status;
+    
+    // Transparent lifecycle mapping for soft-deleted / trashed items
+    if (suggestion.isDeleted) {
+      this.status = 'dismissed';
+      this.isDismissed = true;
+      this.dismissedAt = suggestion.deletedAt;
+      this.dismissalReason = suggestion.deletedReason || 'Reviewed and closed by SSG Administration.';
+    } else if (suggestion.status === 'purged') {
+      this.status = 'purged';
+      this.isPurged = true;
+      this.purgedAt = suggestion.purgedAt;
+      this.dismissalReason = suggestion.reason || 'Permanently closed during administrative system maintenance.';
+    } else {
+      this.status = suggestion.status;
+      this.isDismissed = false;
+      this.isPurged = false;
+    }
+
+    this.deletedReason = suggestion.deletedReason || null;
     this.priority = suggestion.priority;
     this.imageUrl = suggestion.imageUrl;
+    
+    // Find latest rejection note if rejected
+    if (this.status === 'rejected') {
+      const lastRejection = suggestion.statusHistory?.slice().reverse().find(h => h.status === 'rejected');
+      this.rejectionReason = lastRejection?.notes || null;
+    }
+
     this.statusHistory = suggestion.statusHistory?.map(h => ({
       status: h.status,
       changedAt: h.changedAt,
@@ -104,7 +135,10 @@ export class PublicSuggestionResponseDTO {
 
 export class CreateSuggestionResponseDTO {
   constructor(suggestion, aiAnalyzed) {
+    this._id = suggestion._id;
+    this.id = suggestion._id;
     this.trackingCode = suggestion.trackingCode;
+    this.userId = suggestion.userId || null;
     this.category = suggestion.category;
     this.title = suggestion.title;
     this.status = suggestion.status;

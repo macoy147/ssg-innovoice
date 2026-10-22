@@ -11,6 +11,17 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: $color-bg-base;
+  color: $text-secondary;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
 // Prevent text selection on UI elements
 button,
 .btn,
@@ -28,28 +39,101 @@ header,
   user-select: none;
 }
 
-html {
-  font-size: 16px;
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #1a1a2e;
-  overscroll-behavior: none;
+// Smooth Click & Micro-Interaction Engine (Optimized & GPU-Accelerated for Low-End Devices)
+button,
+.btn,
+[role="button"],
+.nav-item,
+.tab-btn,
+.portal-switch-btn,
+.status-pill,
+.quick-action-btn,
+.select-option,
+.filter-trigger,
+.category-option,
+.suggestion-card,
+.stat-card,
+.submitter-chip,
+.tag-btn,
+.theme-toggle-simple,
+a.nav-link,
+a.action-btn {
+  -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.16s ease,
+              box-shadow 0.2s ease,
+              opacity 0.16s ease;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+
+  &:hover:not(:disabled) {
+    will-change: transform;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97) translateY(1px);
+    transition-duration: 0.08s;
+  }
+}
+
+// Smooth GPU-composited view transitions
+@keyframes smoothViewFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes smoothModalFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// Reduced Motion Preference Support
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 body {
   font-family: $font-primary;
   font-size: $text-base;
   line-height: 1.6;
-  color: $color-grey-darker;
-  background-color: #1a1a2e;
-  overflow-x: hidden;
-  overscroll-behavior: none;
+  color: $text-secondary;
+  background-color: $color-bg-base;
+  background-image: $gradient-hero;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
   -webkit-overflow-scrolling: touch;
-  touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 // Typography
@@ -57,7 +141,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: $font-heading;
   font-weight: 700;
   line-height: 1.2;
-  color: $color-black;
+  color: $text-primary;
   margin-bottom: $spacing-4;
   -webkit-user-select: text;
   -moz-user-select: text;
@@ -74,6 +158,7 @@ h6 { font-size: $text-lg; }
 
 p {
   margin-bottom: $spacing-4;
+  color: $text-secondary;
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
@@ -81,12 +166,12 @@ p {
 }
 
 a {
-  color: $primary-red;
+  color: $primary-accent;
   text-decoration: none;
   @include transition(color $transition-fast);
   
   &:hover {
-    color: $primary-red-dark;
+    color: $accent-hover;
   }
 }
 
@@ -114,33 +199,33 @@ a {
 .flex-between { @include flex-between; }
 .flex-column { @include flex-column; }
 
-// Scrollbar Styling
+// Scrollbar Styling - Subtle, Modern & Single
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: $color-grey-light;
+  background: $bg-main;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: $primary-red;
+  background: $border-color;
   border-radius: $radius-full;
   
   &:hover {
-    background: $primary-red-dark;
+    background: $primary-accent;
   }
 }
 
 // Selection
 ::selection {
-  background-color: $primary-red;
-  color: $color-white;
+  background: rgba(159, 18, 57, 0.25);
+  color: #FFFFFF;
 }
 
 ::-moz-selection {
-  background-color: $primary-red;
+  background-color: rgba($palette-terracotta, 0.45);
   color: $color-white;
 }
 
