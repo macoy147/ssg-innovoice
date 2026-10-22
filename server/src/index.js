@@ -27,20 +27,55 @@ app.set('trust proxy', 1);
 connectDB();
 
 // CORS configuration - mounted first before all other middleware
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) 
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'];
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'https://ssginnovoice.cebutech.digital',
+  'http://ssginnovoice.cebutech.digital',
+  'https://www.ssginnovoice.cebutech.digital'
+];
+
+const envOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean)
+  : [];
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Server-to-server or tools with no origin
+  const normalized = origin.replace(/\/$/, '');
+
+  if (allowedOrigins.includes(normalized)) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    const hostname = parsed.hostname;
+    if (
+      hostname === 'cebutech.digital' ||
+      hostname.endsWith('.cebutech.digital') ||
+      hostname.endsWith('.vercel.app') ||
+      hostname.endsWith('.onrender.com')
+    ) {
+      return true;
+    }
+  } catch {
+    // Malformed URL, reject
+  }
+
+  return false;
+};
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (server-to-server, mobile app shells)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       logger.warn(`Blocked by CORS: origin ${origin} is not in allowed origins`);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     }
   },
   credentials: true,
