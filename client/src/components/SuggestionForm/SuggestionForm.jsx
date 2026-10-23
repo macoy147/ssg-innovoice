@@ -7,6 +7,7 @@ import {
   IconUsersGroup,
   IconBulb,
   IconShieldLock,
+  IconShieldCheck,
   IconUserCheck,
   IconPhotoPlus,
   IconX,
@@ -860,7 +861,7 @@ const SuggestionForm = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3 }}
-                className="form-step"
+                className="form-step step-submit"
               >
                 <div className="step-header">
                   <h2>How would you like to submit?</h2>
@@ -869,8 +870,10 @@ const SuggestionForm = () => {
 
                 {student && (
                   <div className="logged-in-privacy-notice">
-                    <span className="notice-icon">🛡️</span>
-                    <div>
+                    <span className="notice-icon">
+                      <IconShieldCheck size={16} />
+                    </span>
+                    <div className="notice-content">
                       <strong>Signed in as {student.name || student.email}</strong>
                       <p>
                         {isAnonymous
@@ -905,11 +908,11 @@ const SuggestionForm = () => {
                   <motion.div
                     className={`toggle-option ${isAnonymous ? 'active' : ''}`}
                     onClick={handleSelectAnonymous}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                   >
                     <div className="option-icon">
-                      <IconShieldLock size={24} />
+                      <IconShieldLock size={20} />
                     </div>
                     <div className="option-content">
                       <h3>Anonymous</h3>
@@ -923,11 +926,11 @@ const SuggestionForm = () => {
                   <motion.div
                     className={`toggle-option ${!isAnonymous ? 'active' : ''}`}
                     onClick={handleSelectIncludeDetails}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                   >
                     <div className="option-icon">
-                      <IconUserCheck size={24} />
+                      <IconUserCheck size={20} />
                     </div>
                     <div className="option-content">
                       <h3>Include My Details</h3>
