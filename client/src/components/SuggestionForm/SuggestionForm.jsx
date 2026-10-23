@@ -545,20 +545,9 @@ const SuggestionForm = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="hero-badge-row">
-            <div className="hero-badge">
-              <span className="pulse-dot"></span>
-              <span>Student Suggestion Portal • S. 2025–2026</span>
-            </div>
-            <button
-              type="button"
-              className="hero-guide-chip"
-              onClick={() => setIsGuideModalOpen(true)}
-              title="Click for a quick walkthrough on how to submit and track reports"
-            >
-              <IconHelpCircle size={14} />
-              <span>How It Works Guide</span>
-            </button>
+          <div className="hero-badge">
+            <span className="pulse-dot"></span>
+            <span>Student Suggestion Portal • S. 2025–2026</span>
           </div>
           <h2 className="hero-heading">Share Your Voice & Help Improve CTU-DB</h2>
           <p className="hero-description">
