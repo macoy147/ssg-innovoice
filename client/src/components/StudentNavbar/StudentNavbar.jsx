@@ -6,6 +6,7 @@ import {
   IconSearch, 
   IconQrcode, 
   IconInfoCircle, 
+  IconHelpCircle,
   IconFolder, 
   IconFileText, 
   IconLayoutDashboard, 
@@ -14,7 +15,7 @@ import {
 import { useStudentAuth } from '../../context/StudentAuthContext';
 import './StudentNavbar.scss';
 
-const StudentNavbar = ({ onOpenTrack, onOpenQR, onOpenAbout }) => {
+const StudentNavbar = ({ onOpenTrack, onOpenQR, onOpenAbout, onOpenGuide }) => {
   const navigate = useNavigate();
   const { 
     student, 
@@ -111,6 +112,17 @@ const StudentNavbar = ({ onOpenTrack, onOpenQR, onOpenAbout }) => {
           >
             <IconQrcode size={16} className="btn-icon-svg" />
             <span className="btn-text">QR Code</span>
+          </button>
+
+          {/* User Guide Modal */}
+          <button 
+            type="button" 
+            className="nav-btn nav-btn-ghost guide-nav-btn" 
+            onClick={onOpenGuide}
+            title="How to use InnoVoice & submit reports"
+          >
+            <IconHelpCircle size={16} className="btn-icon-svg" />
+            <span className="btn-text">Guide</span>
           </button>
 
           {/* About Modal */}

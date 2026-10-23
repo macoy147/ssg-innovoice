@@ -178,6 +178,19 @@
           color: #ffffff;
           background: rgba(55, 65, 81, 0.6);
         }
+
+        &.guide-nav-btn {
+          color: #FCE7F3;
+          background: rgba(159, 18, 57, 0.16);
+          border: 1px solid rgba(159, 18, 57, 0.38);
+
+          &:hover {
+            background: rgba(159, 18, 57, 0.32);
+            border-color: rgba(159, 18, 57, 0.65);
+            color: #ffffff;
+            transform: translateY(-1px);
+          }
+        }
       }
 
       // Responsive mobile icon button transformation

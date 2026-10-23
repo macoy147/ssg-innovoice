@@ -26,13 +26,15 @@ import {
   IconScale,
   IconUsers,
   IconActivity,
-  IconAlertTriangle
+  IconAlertTriangle,
+  IconHelpCircle
 } from '@tabler/icons-react';
 import './SuggestionForm.scss';
 import TrackSuggestion from '../TrackSuggestion/TrackSuggestion';
 import QRCodeModal from '../QRCodeModal/QRCodeModal';
 import StudentNavbar from '../StudentNavbar/StudentNavbar';
 import MyReportsModal from '../MyReportsModal/MyReportsModal';
+import UserGuideModal from '../UserGuideModal/UserGuideModal';
 import { useStudentAuth } from '../../context/StudentAuthContext';
 import { useBodyScrollLock } from '../../utils/scrollLock';
 import API_URL from '../../config/api';
@@ -163,9 +165,10 @@ const SuggestionForm = () => {
   const [activeTrackCode, setActiveTrackCode] = useState('');
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   // Lock background scrolling whenever any user-side modal is active
-  useBodyScrollLock(Boolean(isTrackModalOpen || isQRModalOpen || isAboutModalOpen || isMyReportsOpen));
+  useBodyScrollLock(Boolean(isTrackModalOpen || isQRModalOpen || isAboutModalOpen || isMyReportsOpen || isGuideModalOpen));
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -530,6 +533,7 @@ const SuggestionForm = () => {
         }}
         onOpenQR={() => setIsQRModalOpen(true)}
         onOpenAbout={() => setIsAboutModalOpen(true)}
+        onOpenGuide={() => setIsGuideModalOpen(true)}
       />
 
       <div className="suggestion-form-container">
@@ -541,9 +545,20 @@ const SuggestionForm = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="hero-badge">
-            <span className="pulse-dot"></span>
-            <span>Student Suggestion Portal • S. 2025–2026</span>
+          <div className="hero-badge-row">
+            <div className="hero-badge">
+              <span className="pulse-dot"></span>
+              <span>Student Suggestion Portal • S. 2025–2026</span>
+            </div>
+            <button
+              type="button"
+              className="hero-guide-chip"
+              onClick={() => setIsGuideModalOpen(true)}
+              title="Click for a quick walkthrough on how to submit and track reports"
+            >
+              <IconHelpCircle size={14} />
+              <span>How It Works Guide</span>
+            </button>
           </div>
           <h2 className="hero-heading">Share Your Voice & Help Improve CTU-DB</h2>
           <p className="hero-description">
@@ -1418,6 +1433,16 @@ const SuggestionForm = () => {
         <QRCodeModal
           isOpen={isQRModalOpen}
           onClose={() => setIsQRModalOpen(false)}
+        />
+
+        {/* User Guide Modal */}
+        <UserGuideModal
+          isOpen={isGuideModalOpen}
+          onClose={() => setIsGuideModalOpen(false)}
+          onStartSubmitting={() => {
+            setIsGuideModalOpen(false);
+            setStep(1);
+          }}
         />
       </div>
     </div>

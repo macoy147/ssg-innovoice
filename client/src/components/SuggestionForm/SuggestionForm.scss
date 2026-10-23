@@ -349,6 +349,41 @@
   align-items: center;
   gap: 0.3rem;
 
+  .hero-badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+
+    .hero-guide-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(159, 18, 57, 0.2);
+      border: 1px solid rgba(159, 18, 57, 0.5);
+      padding: 0.18rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #FCE7F3;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+      &:hover {
+        background: rgba(159, 18, 57, 0.38);
+        border-color: #BE123C;
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(159, 18, 57, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
   .hero-badge {
     display: inline-flex;
     align-items: center;
