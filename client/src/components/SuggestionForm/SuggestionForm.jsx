@@ -34,6 +34,7 @@ import QRCodeModal from '../QRCodeModal/QRCodeModal';
 import StudentNavbar from '../StudentNavbar/StudentNavbar';
 import MyReportsModal from '../MyReportsModal/MyReportsModal';
 import { useStudentAuth } from '../../context/StudentAuthContext';
+import { useBodyScrollLock } from '../../utils/scrollLock';
 import API_URL from '../../config/api';
 
 // Toast Notification Component - Chat Head Style
@@ -162,6 +163,9 @@ const SuggestionForm = () => {
   const [activeTrackCode, setActiveTrackCode] = useState('');
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+
+  // Lock background scrolling whenever any user-side modal is active
+  useBodyScrollLock(Boolean(isTrackModalOpen || isQRModalOpen || isAboutModalOpen || isMyReportsOpen));
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isDragging, setIsDragging] = useState(false);

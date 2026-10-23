@@ -15,6 +15,8 @@
   align-items: center;
   justify-content: center;
   padding: $spacing-4;
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 // Modal Container
@@ -25,6 +27,8 @@
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   animation: smoothModalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: opacity, transform;
   box-shadow: 

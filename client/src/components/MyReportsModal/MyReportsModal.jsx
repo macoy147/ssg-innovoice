@@ -25,6 +25,7 @@ import {
   IconArchive
 } from '@tabler/icons-react';
 import { useStudentAuth } from '../../context/StudentAuthContext';
+import { useBodyScrollLock } from '../../utils/scrollLock';
 import './MyReportsModal.scss';
 
 const statusConfig = {
@@ -47,6 +48,8 @@ const categoryConfig = {
 };
 
 const MyReportsModal = ({ isOpen, onClose, onTrackCode }) => {
+  useBodyScrollLock(isOpen);
+
   const { 
     student, 
     savedReports, 

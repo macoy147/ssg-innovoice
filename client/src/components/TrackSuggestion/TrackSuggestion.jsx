@@ -21,8 +21,8 @@ import {
   IconInfoCircle
 } from '@tabler/icons-react';
 import axios from 'axios';
-import './TrackSuggestion.scss';
 import API_URL from '../../config/api';
+import { useBodyScrollLock } from '../../utils/scrollLock';
 
 const statusConfig = {
   submitted: { label: 'Submitted', color: '#9ca3af', Icon: IconFileText, step: 1 },
@@ -43,6 +43,8 @@ const categoryConfig = {
 };
 
 const TrackSuggestion = ({ isOpen, onClose, initialCode = '' }) => {
+  useBodyScrollLock(isOpen);
+
   const [trackingCode, setTrackingCode] = useState(initialCode);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

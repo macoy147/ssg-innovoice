@@ -23,6 +23,15 @@ html {
   overscroll-behavior-y: none; // Disables elastic rubber-band scroll bounce gap
 }
 
+// Modal Background Scroll Lock
+html.modal-scroll-locked,
+body.modal-scroll-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none;
+}
+
+
 // Prevent text selection on UI elements
 button,
 .btn,

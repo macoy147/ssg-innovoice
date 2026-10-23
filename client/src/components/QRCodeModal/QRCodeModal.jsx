@@ -1,9 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconDeviceMobile, IconX, IconDownload, IconPrinter } from '@tabler/icons-react';
 import { QR_CONFIG, APP_NAME } from '../../config/app';
+import { useBodyScrollLock } from '../../utils/scrollLock';
 import './QRCodeModal.scss';
 
 function QRCodeModal({ isOpen, onClose, url, title, description }) {
+  useBodyScrollLock(isOpen);
+
   if (!isOpen) return null;
 
   // Use provided values or defaults from config
