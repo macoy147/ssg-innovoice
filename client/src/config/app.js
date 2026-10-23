@@ -1,7 +1,7 @@
 // Application Configuration
 
 // Primary domain (custom domain)
-export const APP_URL = 'https://ssginnovoice.filipino.gg';
+export const APP_URL = 'https://ssginnovoice.cebutech.digital';
 
 // Alternative URLs (for reference)
 export const VERCEL_URL = 'https://voiceitshapeit.vercel.app';
@@ -21,9 +21,12 @@ export const QR_CONFIG = {
   // Main app URL for QR codes
   url: APP_URL,
   
+  // Custom branded QR Code image
+  image: '/ssg-qr-code.png',
+  
   // QR Code settings
   size: 200,
-  level: 'M', // Error correction: L, M, Q, H
+  level: 'H', // Error correction: L, M, Q, H
   bgColor: '#ffffff',
   fgColor: '#000000',
   

@@ -1,6 +1,5 @@
-import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconDeviceMobile, IconX } from '@tabler/icons-react';
+import { IconDeviceMobile, IconX, IconDownload, IconPrinter } from '@tabler/icons-react';
 import { QR_CONFIG, APP_NAME } from '../../config/app';
 import './QRCodeModal.scss';
 
@@ -11,6 +10,11 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
   const qrUrl = url || QR_CONFIG.url;
   const qrTitle = title || QR_CONFIG.title;
   const qrDescription = description || QR_CONFIG.description;
+  const qrImage = QR_CONFIG.image || '/ssg-qr-code.png';
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <AnimatePresence>
@@ -65,21 +69,10 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
             </div>
 
             <div className="qr-code-container">
-              <QRCodeSVG 
-                className="qr-code-svg"
-                value={qrUrl}
-                size={QR_CONFIG.size}
-                level="H"
-                bgColor={QR_CONFIG.bgColor}
-                fgColor={QR_CONFIG.fgColor}
-                imageSettings={{
-                  src: '/ssg-logo.png',
-                  x: undefined,
-                  y: undefined,
-                  height: 40,
-                  width: 40,
-                  excavate: true,
-                }}
+              <img 
+                src={qrImage} 
+                alt="SSG InnoVoice Official QR Code" 
+                className="qr-code-img"
               />
             </div>
 
@@ -96,6 +89,26 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
                 <span className="url-label">URL:</span>
                 <span className="url-text">{qrUrl}</span>
               </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="qr-actions">
+              <a 
+                href={qrImage} 
+                download="NEW-SSG-QR-CODE.png" 
+                className="qr-btn qr-btn-primary"
+              >
+                <IconDownload size={18} />
+                <span>Download QR</span>
+              </a>
+              <button 
+                type="button" 
+                onClick={handlePrint} 
+                className="qr-btn qr-btn-secondary"
+              >
+                <IconPrinter size={18} />
+                <span>Print Poster</span>
+              </button>
             </div>
           </motion.div>
         </motion.div>
@@ -132,7 +145,8 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
             min-height: 100vh;
           }
           .qr-modal-header,
-          .qr-info {
+          .qr-info,
+          .qr-actions {
             display: none !important;
           }
           .qr-modal-body {
@@ -166,17 +180,15 @@ function QRCodeModal({ isOpen, onClose, url, title, description }) {
           }
           .qr-code-container {
             background: white;
-            padding: 30px;
+            padding: 24px;
             border-radius: 30px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
           }
-          .qr-code-svg {
-            width: 400px !important;
-            height: 400px !important;
-          }
-          .qr-code-svg image {
-            width: 80px !important;
-            height: 80px !important;
+          .qr-code-img {
+            width: 360px !important;
+            height: 360px !important;
+            object-fit: contain;
+            display: block;
           }
           .print-scan-button {
             display: block !important;
