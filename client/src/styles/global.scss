@@ -15,11 +15,12 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: $color-bg-base;
+  background-color: #111827; // Matches bottom gradient to prevent contrast during scroll
   color: $text-secondary;
   overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
+  overscroll-behavior-y: none; // Disables elastic rubber-band scroll bounce gap
 }
 
 // Prevent text selection on UI elements
@@ -119,7 +120,7 @@ body {
   font-size: $text-base;
   line-height: 1.6;
   color: $text-secondary;
-  background-color: $color-bg-base;
+  background-color: #111827;
   background-image: $gradient-hero;
   background-attachment: fixed;
   margin: 0;
@@ -128,6 +129,7 @@ body {
   -webkit-overflow-scrolling: touch;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
 }
 
 #root {
