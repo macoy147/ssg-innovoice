@@ -23,6 +23,7 @@ import {
 import axios from 'axios';
 import API_URL from '../../config/api';
 import { useBodyScrollLock } from '../../utils/scrollLock';
+import './TrackSuggestion.scss';
 
 const statusConfig = {
   submitted: { label: 'Submitted', color: '#9ca3af', Icon: IconFileText, step: 1 },
@@ -119,38 +120,38 @@ const TrackSuggestion = ({ isOpen, onClose, initialCode = '' }) => {
     return statusConfig[status]?.step || 1;
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
-        className="track-modal-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={handleClose}
-      >
+      {isOpen && (
         <motion.div
-          className="track-modal"
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          onClick={(e) => e.stopPropagation()}
+          className="track-modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={handleClose}
         >
-          {/* Modal Header */}
-          <div className="track-modal-header">
-            <div className="header-icon">
-              <IconSearch size={22} color="#fca5a5" />
+          <motion.div
+            className="track-modal"
+            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 16 }}
+            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="track-modal-header">
+              <div className="header-icon">
+                <IconSearch size={20} />
+              </div>
+              <div className="header-text">
+                <h2>Track Suggestion</h2>
+                <p>Enter your tracking code to view status and timeline updates</p>
+              </div>
+              <button className="close-btn" onClick={handleClose} aria-label="Close">
+                <IconClose size={18} />
+              </button>
             </div>
-            <div className="header-text">
-              <h2>Track Suggestion</h2>
-              <p>Enter your tracking code to view status and timeline updates</p>
-            </div>
-            <button className="close-btn" onClick={handleClose} aria-label="Close">
-              <IconClose size={20} />
-            </button>
-          </div>
 
           {/* Search Form */}
           <form onSubmit={handleTrack} className="track-form">
@@ -353,6 +354,7 @@ const TrackSuggestion = ({ isOpen, onClose, initialCode = '' }) => {
           </AnimatePresence>
         </motion.div>
       </motion.div>
+      )}
     </AnimatePresence>
   );
 };
